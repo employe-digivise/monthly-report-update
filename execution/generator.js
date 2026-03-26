@@ -5,6 +5,30 @@ const path = require('path');
 const axios = require('axios');
 const { URL } = require('url');
 
+// Template configurations
+const TEMPLATE_CONFIG = {
+    default: {
+        css: 'styles_atria.css',
+        ejs: 'template_atria.ejs',
+        colors: {
+            primary: '#002B5B',
+            accent: '#F59E0B',
+            tertiary: '#10B981',
+            centerText: '#002B5B'
+        }
+    },
+    corporate: {
+        css: 'styles_corporate.css',
+        ejs: 'template_corporate.ejs',
+        colors: {
+            primary: '#6B21A8',
+            accent: '#EA580C',
+            tertiary: '#7C3AED',
+            centerText: '#6B21A8'
+        }
+    }
+};
+
 // Concurrency control: max 3 simultaneous PDF generations
 const MAX_CONCURRENT = 3;
 let activeGenerations = 0;
@@ -181,7 +205,7 @@ function buildDonutChartSVG(segments, opts) {
         parts.push(`<text x="${cx}" y="${cy - 8}" text-anchor="middle" font-size="10" font-weight="600" fill="#6b7280">${opts.centerLabel}</text>`);
     }
     if (opts.centerValue !== undefined) {
-        parts.push(`<text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="16" font-weight="900" fill="#002B5B">${opts.centerValue}</text>`);
+        parts.push(`<text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="16" font-weight="900" fill="${opts.centerColor || '#002B5B'}">${opts.centerValue}</text>`);
     }
 
     return `<svg viewBox="0 0 ${w} ${h}" width="${opts.displayWidth || 210}" height="${opts.displayHeight || 210}" style="overflow:visible;">${parts.join('')}</svg>`;
@@ -191,6 +215,11 @@ const PUPPETEER_TIMEOUT = 60000; // 60s max for entire PDF generation
 
 async function generatePDF(data) {
     await acquireSlot();
+
+    // Resolve template configuration
+    const templateKey = (data.template && TEMPLATE_CONFIG[data.template]) ? data.template : 'default';
+    const templateConfig = TEMPLATE_CONFIG[templateKey];
+    console.log(`Using template: ${templateKey}`);
     let browser = null;
     try {
         console.log(`Starting PDF generation... (active: ${activeGenerations}/${MAX_CONCURRENT})`);
@@ -394,9 +423,9 @@ async function generatePDF(data) {
             data.adsChartUrl = await imageToBase64(data.adsPerformanceChart);
         }
 
-        // 3. READ CSS AND EJS
-        let cssContent = await fs.readFile(path.join(__dirname, 'templates', 'styles_atria.css'), 'utf-8');
-        const templatePath = path.join(__dirname, 'templates', 'template_atria.ejs');
+        // 3. READ CSS AND EJS (template-driven)
+        let cssContent = await fs.readFile(path.join(__dirname, 'templates', templateConfig.css), 'utf-8');
+        const templatePath = path.join(__dirname, 'templates', templateConfig.ejs);
         const templateContent = await fs.readFile(templatePath, 'utf-8');
 
         // 3b. EMBED FONTS AS BASE64 (offline-safe, no Google Fonts CDN dependency)
@@ -436,10 +465,10 @@ async function generatePDF(data) {
         const existingPct = sp.existingSales || 0;
         const shopeeDonutSvg = buildDonutChartSVG(
             [
-                { pct: adSalesPct, color: '#002B5B', label: 'NEW BUYERS' },
-                { pct: existingPct, color: '#F59E0B', label: 'OLD BUYERS' }
+                { pct: adSalesPct, color: templateConfig.colors.primary, label: 'NEW BUYERS' },
+                { pct: existingPct, color: templateConfig.colors.accent, label: 'OLD BUYERS' }
             ],
-            { cx: 130, cy: 130, r: 80, rout: 105, width: 260, height: 260, displayWidth: 210, displayHeight: 210, centerLabel: 'AD SALES', centerValue: adSalesPct.toFixed(1) + '%' }
+            { cx: 130, cy: 130, r: 80, rout: 105, width: 260, height: 260, displayWidth: 210, displayHeight: 210, centerLabel: 'AD SALES', centerValue: adSalesPct.toFixed(1) + '%', centerColor: templateConfig.colors.centerText }
         );
 
         let tiktokDonutSvg = '';
@@ -447,11 +476,11 @@ async function generatePDF(data) {
             const comp = data.tiktok_data.store_performance.composition;
             tiktokDonutSvg = buildDonutChartSVG(
                 [
-                    { pct: comp.video?.percentage || 0, color: '#002B5B', label: 'VIDEO' },
-                    { pct: comp.live_streaming?.percentage || 0, color: '#F59E0B', label: 'LIVE' },
-                    { pct: comp.product_card?.percentage || 0, color: '#10B981', label: 'KARTU' }
+                    { pct: comp.video?.percentage || 0, color: templateConfig.colors.primary, label: 'VIDEO' },
+                    { pct: comp.live_streaming?.percentage || 0, color: templateConfig.colors.accent, label: 'LIVE' },
+                    { pct: comp.product_card?.percentage || 0, color: templateConfig.colors.tertiary, label: 'KARTU' }
                 ],
-                { cx: 125, cy: 125, r: 75, rout: 100, width: 250, height: 250, displayWidth: 190, displayHeight: 190, centerLabel: 'KOMPOSISI' }
+                { cx: 125, cy: 125, r: 75, rout: 100, width: 250, height: 250, displayWidth: 190, displayHeight: 190, centerLabel: 'KOMPOSISI', centerColor: templateConfig.colors.centerText }
             );
         }
 

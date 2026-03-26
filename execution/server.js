@@ -173,6 +173,16 @@ async function handleReportGeneration(req, res) {
             data.metrics = sanitizeMetrics(data.metrics);
         }
 
+        // Validate template parameter
+        if (data.template && !['default', 'corporate'].includes(data.template)) {
+            return res.status(400).json({
+                success: false,
+                message: `Invalid template: "${data.template}". Valid options: "default", "corporate".`,
+                requestId: reqId
+            });
+        }
+        if (!data.template) data.template = 'default';
+
         console.log(`[${reqId}] Received request for brand: ${data.brandName}`);
 
         // Trigger the Iron Frame generator
