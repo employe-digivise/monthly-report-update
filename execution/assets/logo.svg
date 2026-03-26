@@ -1,0 +1,10 @@
+<svg width="300" height="50" viewBox="0 0 300 50" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .text { font-family: 'Arial', sans-serif; font-weight: 900; font-size: 38px; fill: #1a1a1a; }
+    .bar { height: 7px; rx: 3.5px; ry: 3.5px; width: 45px; }
+  </style>
+  <text x="0" y="38" class="text">DIGIVISE</text>
+  <rect x="200" y="10" class="bar" fill="#8B5CF6" /> <!-- Purple -->
+  <rect x="200" y="21" class="bar" fill="#10B981" /> <!-- Green -->
+  <rect x="200" y="32" class="bar" fill="#F97316" /> <!-- Orange -->
+</svg>

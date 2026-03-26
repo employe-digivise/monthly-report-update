@@ -1,0 +1,41 @@
+# Environment & Secrets
+.env
+.env.*
+
+# Dependencies
+node_modules/
+.venv/
+
+# OS files
+.DS_Store
+Icon?
+.tmp/
+
+# Binaries
+ngrok
+
+# Logs
+*.log
+
+# Debug/test response files
+curl_response*.json
+test_fixes.json
+final_test.json
+test_payload*.json
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Generated output
+output/*.pdf
+
+# Template backups
+execution/templates/*.bak*
+execution/templates/*.backup
+
+# Project backup
+project_backup.zip
+
+# Claude Code local config
+.claude/

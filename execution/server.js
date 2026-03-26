@@ -1,0 +1,268 @@
+const express = require('express');
+const morgan = require('morgan');
+const path = require('path');
+const cors = require('cors');
+const crypto = require('crypto');
+
+const fs = require('fs');
+const { generatePDF } = require('./generator');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Per-user cooldown: 1 request per 30 seconds per IP
+const cooldownMap = new Map();
+const COOLDOWN_SECONDS = 30;
+
+function rateLimiter(req, res, next) {
+    const ip = req.ip || req.connection.remoteAddress;
+    const now = Date.now();
+    const lastRequest = cooldownMap.get(ip);
+
+    if (lastRequest) {
+        const elapsed = (now - lastRequest) / 1000;
+        if (elapsed < COOLDOWN_SECONDS) {
+            const remaining = Math.ceil(COOLDOWN_SECONDS - elapsed);
+            return res.status(429).json({
+                success: false,
+                message: `Please wait ${remaining} seconds before generating another report.`,
+                retryAfter: remaining
+            });
+        }
+    }
+
+    cooldownMap.set(ip, now);
+    return next();
+}
+
+// Cleanup stale cooldown entries every 5 minutes
+setInterval(() => {
+    const now = Date.now();
+    for (const [ip, timestamp] of cooldownMap) {
+        if (now - timestamp > COOLDOWN_SECONDS * 1000) cooldownMap.delete(ip);
+    }
+}, 5 * 60 * 1000);
+
+// Request ID middleware
+app.use((req, res, next) => {
+    req.requestId = crypto.randomBytes(8).toString('hex');
+    res.setHeader('X-Request-Id', req.requestId);
+    next();
+});
+
+// Middleware
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000'];
+app.use(cors({
+    origin: function (origin, callback) {
+        // Allow requests with no origin (server-to-server, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        return callback(new Error('Not allowed by CORS'));
+    }
+}));
+app.use(morgan((tokens, req, res) => {
+    return [
+        `[${req.requestId || '-'}]`,
+        tokens.method(req, res),
+        tokens.url(req, res),
+        tokens.status(req, res),
+        tokens['response-time'](req, res), 'ms'
+    ].join(' ');
+}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Serve static output files from root output folder
+app.use('/output', express.static(path.join(__dirname, '..', 'output')));
+
+/**
+ * Health check endpoint
+ */
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        uptime: Math.floor(process.uptime()),
+        memory: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB',
+        timestamp: new Date().toISOString()
+    });
+});
+
+/**
+ * Compatible endpoint with monthly-report-generator-main 2
+ */
+app.post('/generate-report', rateLimiter, async (req, res) => {
+    await handleReportGeneration(req, res);
+});
+
+/**
+ * Endpoint specifically for Lovable Webhook
+ */
+app.post('/webhook/lovable', rateLimiter, async (req, res) => {
+    await handleReportGeneration(req, res);
+});
+
+/**
+ * Validate and sanitize enabledChannels
+ */
+function sanitizeEnabledChannels(channels) {
+    const validChannels = ['shopee', 'tiktok', 'tokopedia', 'lazada', 'blibli', 'cpas'];
+    const result = {};
+    for (const ch of validChannels) {
+        result[ch] = !!(channels && typeof channels === 'object' && channels[ch]);
+    }
+    return result;
+}
+
+/**
+ * Validate numeric fields in metrics
+ */
+function sanitizeMetrics(metrics) {
+    if (!metrics || typeof metrics !== 'object') return undefined;
+    const numericFields = ['unfulfilledOrders', 'lateShipment', 'chatResponseRate', 'overallRating'];
+    for (const field of numericFields) {
+        if (metrics[field] !== undefined) {
+            const num = Number(metrics[field]);
+            metrics[field] = isNaN(num) ? 0 : num;
+        }
+    }
+    return metrics;
+}
+
+async function handleReportGeneration(req, res) {
+    const reqId = req.requestId;
+    try {
+        const data = req.body;
+
+        if (!data || Object.keys(data).length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid or empty JSON body.',
+                requestId: reqId
+            });
+        }
+
+        if (!data.brandName || typeof data.brandName !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid data format. brandName is required and must be a string.',
+                requestId: reqId
+            });
+        }
+
+        // Validate required fields
+        const requiredFields = ['reportMonth', 'reportYear'];
+        for (const field of requiredFields) {
+            if (!data[field]) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Missing required field: ${field}`,
+                    requestId: reqId
+                });
+            }
+        }
+
+        // Sanitize enabledChannels
+        data.enabledChannels = sanitizeEnabledChannels(data.enabledChannels);
+
+        // Sanitize numeric metrics
+        if (data.metrics) {
+            data.metrics = sanitizeMetrics(data.metrics);
+        }
+
+        console.log(`[${reqId}] Received request for brand: ${data.brandName}`);
+
+        // Trigger the Iron Frame generator
+        const pdfPath = await generatePDF(data);
+        const fileName = path.basename(pdfPath);
+
+        // Construct the full download URL using the host header (or tunnel URL if known)
+        // For localtunnel, req.get('host') effectively returns the tunnel domain.
+        const downloadUrl = `${req.protocol}://${req.get('host')}/output/${fileName}`;
+
+        console.log(`[${reqId}] PDF generated: ${fileName}`);
+
+        res.status(200).json({
+            success: true,
+            message: 'PDF generated successfully',
+            fileName: fileName,
+            downloadUrl: downloadUrl,
+            requestId: reqId,
+            data: {
+                pdfUrl: downloadUrl
+            }
+        });
+
+    } catch (error) {
+        console.error(`[${reqId}] Server error during PDF generation:`, error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            requestId: reqId
+        });
+    }
+}
+
+app.get('/', (req, res) => {
+    res.send('PDF Report Generator Server (The Iron Frame) is running. POST to /webhook/lovable or /generate-report');
+});
+
+// Auto-cleanup: delete PDFs older than 24 hours
+const OUTPUT_DIR = path.join(__dirname, '..', 'output');
+const MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function cleanupOldPDFs() {
+    try {
+        if (!fs.existsSync(OUTPUT_DIR)) return;
+        const files = fs.readdirSync(OUTPUT_DIR);
+        const now = Date.now();
+        let removed = 0;
+
+        for (const file of files) {
+            if (!file.endsWith('.pdf')) continue;
+            const filePath = path.join(OUTPUT_DIR, file);
+            const stat = fs.statSync(filePath);
+            if (now - stat.mtimeMs > MAX_AGE_MS) {
+                fs.unlinkSync(filePath);
+                removed++;
+            }
+        }
+
+        if (removed > 0) console.log(`Cleanup: removed ${removed} old PDF(s)`);
+    } catch (err) {
+        console.error('Cleanup error:', err.message);
+    }
+}
+
+// Start Server
+let server;
+server = app.listen(PORT, () => {
+    console.log(`-----------------------------------------------`);
+    console.log(`Server is running on http://localhost:${PORT}`);
+    console.log(`Cooldown: ${COOLDOWN_SECONDS}s per IP`);
+    console.log(`-----------------------------------------------`);
+
+    // Run cleanup on start and every hour
+    cleanupOldPDFs();
+    setInterval(cleanupOldPDFs, 60 * 60 * 1000);
+});
+
+// Graceful shutdown
+function gracefulShutdown(signal) {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    server.close(() => {
+        console.log('All connections closed. Exiting.');
+        process.exit(0);
+    });
+    // Force exit after 10 seconds if connections don't close
+    setTimeout(() => {
+        console.error('Forced exit after timeout.');
+        process.exit(1);
+    }, 10000);
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

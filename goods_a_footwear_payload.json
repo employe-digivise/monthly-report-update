@@ -1,0 +1,210 @@
+{
+  "brandName": "GOODS A FOOTWEAR",
+  "reportMonth": "JANUARY",
+  "reportYear": "2026",
+  "showLogo": true,
+  "logoUrl": "https://digivise.id/logo.png",
+  "footerText": "CONFIDENTIAL - DIGIVISE REPORT 2026",
+  "enabledChannels": {
+    "shopee": true,
+    "tiktok": false,
+    "tokopedia": false,
+    "lazada": false,
+    "blibli": false,
+    "cpas": true
+  },
+  "metrics": {
+    "unfulfilledOrders": 0,
+    "lateShipment": 0,
+    "chatResponseRate": 0,
+    "overallRating": 0,
+    "summary": "test"
+  },
+  "promotionTools": {
+    "paketDiskon": true,
+    "gratisOngkirXTRA": true,
+    "voucherIkutiToko": true,
+    "voucherTokoSaya": true,
+    "komboHemat": true,
+    "chatBroadcast": true
+  },
+  "operationalScreenshots": [
+    "https://cf.shopee.co.id/file/id-11134207-7r98y-lshzk9cy3bzxf1",
+    "https://cf.shopee.co.id/file/id-11134207-7rbk9-m760ooqrnpd668"
+  ],
+  "promotionScreenshots": [
+    "https://cf.shopee.co.id/file/id-11134207-8224y-mg3hjtgap6ob95",
+    "https://cf.shopee.co.id/file/id-11134207-7r992-lsjbpf3s8tsp7d"
+  ],
+  "globalRevenue": {
+    "totalRevenue": 695436115,
+    "totalOrders": 4636,
+    "chartData": {
+      "labels": [
+        "Jan 25",
+        "Feb 25",
+        "Mar 25",
+        "Apr 25",
+        "May 25",
+        "Jun 25",
+        "Jul 25",
+        "Aug 25",
+        "Sep 25",
+        "Oct 25",
+        "Nov 25",
+        "Dec 25",
+        "Jan 26"
+      ],
+      "revenueData": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        437747260,
+        695436115
+      ],
+      "adsSpentData": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        56805175,
+        79927013
+      ]
+    },
+    "summary": "test"
+  },
+  "globalPerformanceDetail": {
+    "comparisonData": [
+      {
+        "metric": "Revenue",
+        "thisMonth": "Rp695M",
+        "lastMonth": "Rp438M",
+        "growth": "+58.87%",
+        "channels": {
+          "shopee": "Rp647M",
+          "tiktok": "Rp49M",
+          "tokopedia": "Rp0",
+          "lazada": "Rp0",
+          "blibli": "Rp0"
+        }
+      },
+      {
+        "metric": "Cost Spend",
+        "thisMonth": "Rp80M",
+        "lastMonth": "Rp57M",
+        "growth": "+40.70%",
+        "channels": {
+          "shopee": "Rp72M",
+          "tiktok": "Rp4M",
+          "tokopedia": "Rp0",
+          "lazada": "Rp0",
+          "blibli": "Rp0"
+        }
+      },
+      {
+        "metric": "CIR",
+        "thisMonth": "11.49%",
+        "lastMonth": "12.98%",
+        "growth": "-11.43%",
+        "channels": {
+          "shopee": "11.13%",
+          "tiktok": "8.93%",
+          "tokopedia": "0%",
+          "lazada": "0%",
+          "blibli": "0%"
+        }
+      },
+      {
+        "metric": "ROAS",
+        "thisMonth": "8.70x",
+        "lastMonth": "7.71x",
+        "growth": "+12.91%",
+        "channels": {
+          "shopee": "8.98x",
+          "tiktok": "11.20x",
+          "tokopedia": "0x",
+          "lazada": "0x",
+          "blibli": "0x"
+        }
+      }
+    ],
+    "aiConclusion": []
+  },
+  "storePerformance": {
+    "adSales": 0,
+    "existingSales": 100,
+    "totalRevenue": 695436115,
+    "notes": ""
+  },
+  "topProducts": [
+    {
+      "name": "AMK Kemeja Koko Pria Lengan Pendek KK HADDID S/S Brown",
+      "image": "https://cf.shopee.co.id/file/id-11134207-7r98y-lshzk9cy3bzxf1",
+      "soldPercent": "26.20%",
+      "qty": 109,
+      "revenue": 13898611
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Printing Lengan Panjang KK NIZAM L/S NAVY BLUE",
+      "image": "https://cf.shopee.co.id/file/id-11134207-7rbk9-m760ooqrnpd668",
+      "soldPercent": "19.95%",
+      "qty": 83,
+      "revenue": 11015167
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Printing Lengan Panjang KK Iskander",
+      "image": "https://cf.shopee.co.id/file/id-11134207-8224y-mg3hjtgap6ob95",
+      "soldPercent": "18.75%",
+      "qty": 78,
+      "revenue": 12655217
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Lengan Pendek KK MAHREZ S/S Med. Grey",
+      "image": "https://cf.shopee.co.id/file/id-11134207-7r992-lsjbpf3s8tsp7d",
+      "soldPercent": "17.55%",
+      "qty": 73,
+      "revenue": 11223535
+    },
+    {
+      "name": "AMK Baju Koko Lengan Panjang Bordir KK FAISAL L/S GREY",
+      "image": "https://cf.shopee.co.id/file/id-11134207-7r990-lsasopi160quba",
+      "soldPercent": "17.55%",
+      "qty": 73,
+      "revenue": 9789323
+    }
+  ],
+  "cpas_data": {
+    "period": [
+      "Dec 25",
+      "Jan 26"
+    ],
+    "awareness_nv": [],
+    "conversion_rm": [],
+    "best_campaigns": {
+      "nv": {
+        "name": "",
+        "image_url": ""
+      },
+      "rm": {
+        "name": "",
+        "image_url": ""
+      }
+    }
+  },
+  "actionPlan": []
+}
