@@ -26,7 +26,7 @@
         <img src="{{ logoUrl }}" class="agency-logo" alt="Agency Logo">
         {% endif %}
         <div class="page-footer">
-            <span>{{ footerText or 'CONFIDENTIAL' }}</span>
+            <span>{% if showLogo %}{{ footerText or 'CONFIDENTIAL' }}{% else %}{{ (footerText or 'CONFIDENTIAL') | replace('DIGIVISE ', '') }}{% endif %}</span>
             {% set pg.n = pg.n + 1 %}<span>Page {{ pg.n }}</span>
         </div>
     </div>

@@ -34,7 +34,7 @@
                 <% } %>
                     <div class="page-footer">
                         <span>
-                            <%= (typeof footerText !=='undefined' && footerText) ? footerText : 'CONFIDENTIAL' %>
+                            <%= (typeof footerText !=='undefined' && footerText) ? ((typeof showLogo !== 'undefined' && showLogo) ? footerText : footerText.replace('DIGIVISE ', '')) : 'CONFIDENTIAL' %>
                         </span>
                         <span>Page <%= nextPage() %></span>
                     </div>
