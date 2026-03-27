@@ -26,6 +26,16 @@ const TEMPLATE_CONFIG = {
             tertiary: '#7C3AED',
             centerText: '#6B21A8'
         }
+    },
+    dashboard: {
+        css: 'styles_dashboard.css',
+        ejs: 'template_dashboard.ejs',
+        colors: {
+            primary: '#002B5B',
+            accent: '#F59E0B',
+            tertiary: '#10B981',
+            centerText: '#002B5B'
+        }
     }
 };
 
