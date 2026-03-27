@@ -10,6 +10,15 @@ const { generatePDF } = require('./generator');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Security headers middleware
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
+
 // Per-user cooldown: 1 request per 30 seconds per IP
 const cooldownMap = new Map();
 const COOLDOWN_SECONDS = 30;
@@ -106,6 +115,14 @@ app.post('/webhook/lovable', rateLimiter, async (req, res) => {
 });
 
 /**
+ * Sanitize a string: strip HTML tags and limit length
+ */
+function sanitizeString(str, maxLen = 200) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/<[^>]*>/g, '').trim().slice(0, maxLen);
+}
+
+/**
  * Validate and sanitize enabledChannels
  */
 function sanitizeEnabledChannels(channels) {
@@ -122,12 +139,20 @@ function sanitizeEnabledChannels(channels) {
  */
 function sanitizeMetrics(metrics) {
     if (!metrics || typeof metrics !== 'object') return undefined;
-    const numericFields = ['unfulfilledOrders', 'lateShipment', 'chatResponseRate', 'overallRating'];
-    for (const field of numericFields) {
+    const rangeRules = {
+        unfulfilledOrders: { min: 0, max: 100 },
+        lateShipment: { min: 0, max: 100 },
+        chatResponseRate: { min: 0, max: 100 },
+        overallRating: { min: 0, max: 5 }
+    };
+    for (const [field, range] of Object.entries(rangeRules)) {
         if (metrics[field] !== undefined) {
             const num = Number(metrics[field]);
-            metrics[field] = isNaN(num) ? 0 : num;
+            metrics[field] = isNaN(num) ? 0 : Math.min(Math.max(num, range.min), range.max);
         }
+    }
+    if (metrics.summary && typeof metrics.summary === 'string') {
+        metrics.summary = sanitizeString(metrics.summary, 500);
     }
     return metrics;
 }
@@ -165,6 +190,23 @@ async function handleReportGeneration(req, res) {
             }
         }
 
+        // Validate reportYear is a reasonable number
+        const year = Number(data.reportYear);
+        if (isNaN(year) || year < 2020 || year > 2030) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid reportYear. Must be between 2020 and 2030.',
+                requestId: reqId
+            });
+        }
+
+        // Sanitize text fields to prevent HTML/script injection
+        data.brandName = sanitizeString(data.brandName, 100);
+        data.reportMonth = sanitizeString(data.reportMonth, 50);
+        data.reportYear = sanitizeString(String(data.reportYear), 10);
+        if (data.footerText) data.footerText = sanitizeString(data.footerText, 200);
+        if (data.shopeeAdsSummary) data.shopeeAdsSummary = sanitizeString(data.shopeeAdsSummary, 1000);
+
         // Sanitize enabledChannels
         data.enabledChannels = sanitizeEnabledChannels(data.enabledChannels);
 
@@ -174,10 +216,11 @@ async function handleReportGeneration(req, res) {
         }
 
         // Validate template parameter
-        if (data.template && !['default', 'corporate'].includes(data.template)) {
+        const validTemplates = ['default', 'corporate', 'dashboard'];
+        if (data.template && !validTemplates.includes(data.template)) {
             return res.status(400).json({
                 success: false,
-                message: `Invalid template: "${data.template}". Valid options: "default", "corporate".`,
+                message: `Invalid template: "${data.template}". Valid options: ${validTemplates.map(t => `"${t}"`).join(', ')}.`,
                 requestId: reqId
             });
         }
@@ -186,7 +229,9 @@ async function handleReportGeneration(req, res) {
         console.log(`[${reqId}] Received request for brand: ${data.brandName}`);
 
         // Trigger the Iron Frame generator
-        const pdfPath = await generatePDF(data);
+        const result = await generatePDF(data);
+        const pdfPath = result.pdfPath || result;
+        const warnings = result.warnings || [];
         const fileName = path.basename(pdfPath);
 
         // Construct the full download URL using the host header (or tunnel URL if known)
@@ -194,8 +239,11 @@ async function handleReportGeneration(req, res) {
         const downloadUrl = `${req.protocol}://${req.get('host')}/output/${fileName}`;
 
         console.log(`[${reqId}] PDF generated: ${fileName}`);
+        if (warnings.length > 0) {
+            console.warn(`[${reqId}] Warnings: ${warnings.join(', ')}`);
+        }
 
-        res.status(200).json({
+        const response = {
             success: true,
             message: 'PDF generated successfully',
             fileName: fileName,
@@ -204,7 +252,11 @@ async function handleReportGeneration(req, res) {
             data: {
                 pdfUrl: downloadUrl
             }
-        });
+        };
+        if (warnings.length > 0) {
+            response.warnings = warnings;
+        }
+        res.status(200).json(response);
 
     } catch (error) {
         console.error(`[${reqId}] Server error during PDF generation:`, error);

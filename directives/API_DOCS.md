@@ -2,24 +2,57 @@
 
 ## Endpoints
 
-### Primary Endpoint (Ngrok - Active)
-**URL**: `https://cfb7-182-10-97-197.ngrok-free.app/webhook/lovable`
+### Webhook Endpoint
+**URL**: `{BASE_URL}/webhook/lovable`
 **Method**: `POST`
 **Headers**:
 - `Content-Type: application/json`
-**Status**: ✅ Active
 
 ### Alternative Endpoint (Manual Report Generation)
-**URL**: `https://cfb7-182-10-97-197.ngrok-free.app/generate-report`
+**URL**: `{BASE_URL}/generate-report`
 **Method**: `POST`
 **Headers**:
 - `Content-Type: application/json`
+
+### Health Check
+**URL**: `{BASE_URL}/health`
+**Method**: `GET`
+**Response**: Server status, uptime, memory usage
 
 ### Local Testing
 **URL**: `http://localhost:3000/webhook/lovable`
 **Method**: `POST`
-**Headers**: 
+**Headers**:
 - `Content-Type: application/json`
+
+---
+
+## Security
+
+### Rate Limiting
+- **Limit**: 1 request per 30 seconds per IP address
+- Exceeding the limit returns HTTP 429 with `retryAfter` field
+
+### CORS
+- Configurable via `ALLOWED_ORIGINS` environment variable
+- Defaults to `http://localhost:3000`
+- Server-to-server requests (no Origin header) are allowed
+
+### SSRF Protection
+- All image URLs are validated before download
+- Blocked: localhost, private IPs (10.x, 172.16-31.x, 192.168.x), cloud metadata endpoints
+- Only HTTP/HTTPS protocols allowed
+
+### Input Sanitization
+- All text fields (brandName, footerText, reportMonth, reportYear) are stripped of HTML tags
+- Numeric metrics are clamped to valid ranges (0-100% for rates, 0-5 for ratings)
+- Template parameter is validated against allowed values
+
+### Security Headers
+All responses include: `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`
+
+### Authentication
+Currently no API key authentication is required. Access is controlled via CORS origins and network-level security (e.g., ngrok, VPN, firewall rules). For production deployments, consider adding API key or token-based authentication.
 
 ---
 
@@ -32,8 +65,9 @@
   "brandName": "AMK",
   "reportMonth": "JANUARY",
   "reportYear": "2026",
+  "template": "default",
   "showLogo": true,
-  "logoUrl": "https://example.com/logo.png", 
+  "logoUrl": "https://example.com/logo.png",
   "footerText": "CONFIDENTIAL - DIGIVISE REPORT 2026",
   "enabledChannels": {
     "shopee": true,
@@ -229,15 +263,26 @@
 ## Field Requirements & Validation
 
 ### Required Fields
-- `brandName` (string): Brand name for the report
-- `reportMonth` (string): Month name in uppercase (e.g., "JANUARY")
-- `reportYear` (string): Year (e.g., "2026")
+- `brandName` (string, max 100 chars): Brand name for the report
+- `reportMonth` (string, max 50 chars): Month name in uppercase (e.g., "JANUARY")
+- `reportYear` (string/number): Year between 2020-2030 (e.g., "2026")
+
+### Template Selection
+- `template` (string, optional): Report visual style
+  - `"default"` - Atria template (blue theme) — **default if omitted**
+  - `"corporate"` - Corporate template (purple theme)
+  - `"dashboard"` - Dashboard template (card-based gray theme)
 
 ### Optional Fields (with Fallbacks)
+- `showLogo` (boolean): Whether to show agency logo. Default: `true`
+- `logoUrl` (string): URL or local path to logo image. Falls back to built-in logo
+- `footerText` (string, max 200 chars): Cover page footer text. Default: `"CONFIDENTIAL"`
+  - When `showLogo=false`, "DIGIVISE" is automatically removed from footer text
+
 - `operationalScreenshots` (array): URLs of operational screenshots (max 2)
   - **If missing**: Placeholder boxes will be shown
   - **Format**: Array of public image URLs
-  
+
 - `promotionScreenshots` (array): URLs of promotion screenshots (max 2)
   - **If missing**: Placeholder boxes will be shown
   - **Format**: Array of public image URLs
@@ -250,13 +295,20 @@
   - **If missing**: TikTok section will be skipped
   - **Default**: `null`
 
-### Pie Chart Visualizations
-The report includes pie charts on **Page 9** (Store Performance) and **Page 16** (TikTok Store Performance):
+### Metrics Validation
+Numeric metrics are clamped to valid ranges:
+- `unfulfilledOrders`: 0-100 (%)
+- `lateShipment`: 0-100 (%)
+- `chatResponseRate`: 0-100 (%)
+- `overallRating`: 0-5
 
-**Color Scheme:**
-- **Primary Blue**: `#1e40af` - First segment (New Buyers / Video)
-- **Medium Blue**: `#3b82f6` - Second segment (Live Streaming)
-- **Light Blue**: `#60a5fa` - Third segment (Old Buyers / Product Card)
+### Pie Chart Visualizations
+The report includes pie charts on **Page 9** (Store Performance) and **Page 16** (TikTok Store Performance).
+
+**Color Scheme (varies by template):**
+- **Default**: Primary `#002B5B`, Accent `#F59E0B`, Tertiary `#10B981`
+- **Corporate**: Primary `#6B21A8`, Accent `#EA580C`, Tertiary `#7C3AED`
+- **Dashboard**: Primary `#002B5B`, Accent `#F59E0B`, Tertiary `#10B981`
 
 **Data Labels:**
 - Percentages are displayed with 1 decimal precision (e.g., "32.0%")
@@ -319,6 +371,8 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
     "lazada": "Rp0",
     "blibli": "Rp0"
   }
+}
+```
 
 ### Image Processing
 - **All image URLs are automatically converted to Base64** during PDF generation
@@ -333,7 +387,7 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
   - `cpas_data.best_campaigns.rm.images` - RM campaign images (max 2)
 - **External URLs from Lovable are fully supported** and will be embedded in the PDF
 - Images must be publicly accessible
-- Failed image downloads will be logged but won't stop PDF generation
+- Failed image downloads are logged and reported in the `warnings` array of the response
 
 ### Top Products
 - Maximum 5 products will be displayed
@@ -351,26 +405,64 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
   "message": "PDF generated successfully",
   "fileName": "Report_AMK_1770798712328.pdf",
   "downloadUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf",
+  "requestId": "a1b2c3d4e5f6g7h8",
   "data": {
     "pdfUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf"
   }
 }
 ```
 
-### Error Response (400 Bad Request)
+### Success with Warnings (200 OK)
+When some images fail to download, the response includes a `warnings` array:
 ```json
 {
-  "success": false,
-  "message": "Invalid or empty JSON body."
+  "success": true,
+  "message": "PDF generated successfully",
+  "fileName": "Report_AMK_1770798712328.pdf",
+  "downloadUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf",
+  "requestId": "a1b2c3d4e5f6g7h8",
+  "warnings": [
+    "Failed to download image: https://example.com/broken-image.png"
+  ],
+  "data": {
+    "pdfUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf"
+  }
 }
 ```
 
-### Error Response (500 Internal Server Error)
+### Error Responses
+
+| Status | Code | Description |
+|--------|------|-------------|
+| 400 | Bad Request | Invalid/empty JSON body, missing required fields, invalid template |
+| 413 | Payload Too Large | Request body exceeds 50MB limit |
+| 429 | Too Many Requests | Rate limit exceeded (1 request per 30 seconds per IP) |
+| 500 | Internal Server Error | PDF generation failure |
+
+**400 Bad Request:**
 ```json
 {
   "success": false,
-  "message": "Error generating PDF",
-  "error": "Detailed error message"
+  "message": "Invalid data format. brandName is required and must be a string.",
+  "requestId": "a1b2c3d4e5f6g7h8"
+}
+```
+
+**429 Too Many Requests:**
+```json
+{
+  "success": false,
+  "message": "Please wait 25 seconds before generating another report.",
+  "retryAfter": 25
+}
+```
+
+**500 Internal Server Error:**
+```json
+{
+  "success": false,
+  "message": "Internal server error",
+  "requestId": "a1b2c3d4e5f6g7h8"
 }
 ```
 
@@ -379,7 +471,7 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
 ## Important Notes
 
 ### Screenshot Requirements
-⚠️ **CRITICAL**: The following fields MUST be included in the request for screenshots to appear:
+**CRITICAL**: The following fields MUST be included in the request for screenshots to appear:
 - `operationalScreenshots`: Array of 2 image URLs
 - `promotionScreenshots`: Array of 2 image URLs
 
@@ -398,12 +490,13 @@ If these fields are missing or empty, placeholder boxes will be displayed in the
 - Average generation time: 4-7 seconds
 - PDF file size: ~2-3 MB
 - Timeout: 60 seconds
+- Max concurrent generations: 3
 
 ### Webhook Integration (Lovable)
 - Use the `/webhook/lovable` endpoint for webhook integrations
-- No authentication required (secured by ngrok URL obscurity)
-- Supports concurrent requests
+- Supports concurrent requests (up to 3 simultaneous)
 - PDF files are stored in `/output` directory with timestamp-based naming
+- PDFs older than 24 hours are automatically cleaned up
 
 ---
 
@@ -411,14 +504,14 @@ If these fields are missing or empty, placeholder boxes will be displayed in the
 
 ### Using cURL
 ```bash
-curl -X POST https://cfb7-182-10-97-197.ngrok-free.app/webhook/lovable \
+curl -X POST http://localhost:3000/webhook/lovable \
   -H "Content-Type: application/json" \
   -d @test_payload.json
 ```
 
 ### Using Postman
 1. Method: POST
-2. URL: `https://cfb7-182-10-97-197.ngrok-free.app/webhook/lovable`
+2. URL: `http://localhost:3000/webhook/lovable`
 3. Headers: `Content-Type: application/json`
 4. Body: Raw JSON (paste the complete example above)
 
@@ -438,9 +531,11 @@ curl -X POST https://cfb7-182-10-97-197.ngrok-free.app/webhook/lovable \
 **Cause**: Invalid `chartData` structure
 **Solution**: Verify `labels`, `revenueData`, and `adsSpentData` arrays have matching lengths
 
+### Issue: Rate Limited (429)
+**Cause**: Sending requests faster than 1 per 30 seconds
+**Solution**: Wait for the `retryAfter` seconds indicated in the response
+
 ---
 
-**Last Updated**: 2026-02-13 10:21 WIB  
-**Active Endpoint**: `https://cfb7-182-10-97-197.ngrok-free.app/webhook/lovable`  
-**Server Status**: ✅ Running on `localhost:3000`
-
+**Last Updated**: 2026-03-27
+**Server Status**: Running on `localhost:3000`

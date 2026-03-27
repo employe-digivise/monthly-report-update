@@ -97,12 +97,16 @@ function isUrlSafe(urlString) {
  * @param {number} retries - Number of retry attempts
  * @returns {string} base64 string or empty string on failure
  */
+// Shared warnings collector for current generation
+let _currentWarnings = [];
+
 async function imageToBase64(filePath, retries = 3) {
     try {
         // Handle HTTP/HTTPS URLs
         if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
             if (!isUrlSafe(filePath)) {
                 console.warn(`Blocked unsafe URL: ${filePath}`);
+                _currentWarnings.push(`Blocked unsafe URL: ${filePath}`);
                 return '';
             }
             for (let attempt = 1; attempt <= retries; attempt++) {
@@ -133,6 +137,7 @@ async function imageToBase64(filePath, retries = 3) {
                 } catch (error) {
                     if (attempt === retries) {
                         console.warn(`File not found (after ${retries} attempts): ${filePath} - ${error.message}`);
+                        _currentWarnings.push(`Failed to download image: ${filePath}`);
                         return '';
                     }
                     // Wait before retry (exponential backoff)
@@ -144,6 +149,7 @@ async function imageToBase64(filePath, retries = 3) {
         // Handle local files
         if (!fs.existsSync(filePath)) {
             console.warn(`File not found: ${filePath}`);
+            _currentWarnings.push(`Local file not found: ${filePath}`);
             return '';
         }
         const bitmap = await fs.readFile(filePath);
@@ -152,6 +158,7 @@ async function imageToBase64(filePath, retries = 3) {
         return `data:image/${extension};base64,${bitmap.toString('base64')}`;
     } catch (error) {
         console.error(`Error converting image ${filePath}:`, error.message);
+        _currentWarnings.push(`Error processing image: ${filePath}`);
         return '';
     }
 }
@@ -225,6 +232,7 @@ const PUPPETEER_TIMEOUT = 60000; // 60s max for entire PDF generation
 
 async function generatePDF(data) {
     await acquireSlot();
+    _currentWarnings = []; // Reset warnings for this generation
 
     // Resolve template configuration
     const templateKey = (data.template && TEMPLATE_CONFIG[data.template]) ? data.template : 'default';
@@ -531,7 +539,7 @@ async function generatePDF(data) {
         });
 
         console.log(`PDF Generated Successfully: ${outputPath}`);
-        return outputPath;
+        return { pdfPath: outputPath, warnings: [..._currentWarnings] };
 
     } catch (error) {
         console.error('Error in PDF generation:', error);
@@ -546,7 +554,11 @@ async function generatePDF(data) {
 
 if (require.main === module) {
     const sampleData = require('./sample_data.json');
-    generatePDF(sampleData);
+    generatePDF(sampleData).then(result => {
+        if (result.warnings && result.warnings.length > 0) {
+            console.warn('Warnings:', result.warnings);
+        }
+    });
 }
 
 module.exports = { generatePDF };
