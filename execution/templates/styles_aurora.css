@@ -1,0 +1,1000 @@
+/* ============================================================
+   AURORA TEMPLATE — Purple & Orange Modern Creative
+   Written from scratch for monthly report PDF generator
+   ============================================================ */
+
+:root {
+    --primary: #6C2BD9;
+    --primary-deep: #4A1B96;
+    --primary-light: #EDE5FB;
+    --primary-pale: #F5F0FF;
+    --accent: #FF6B2C;
+    --accent-light: #FFF0E8;
+    --tertiary: #A855F7;
+    --text-dark: #1E1B3A;
+    --text-body: #3D3856;
+    --text-muted: #8C86A5;
+    --bg-page: #FAFAFE;
+    --bg-light: #F5F0FF;
+    --border: #E2DAF2;
+    --success-green: #16A34A;
+    --error-red: #DC2626;
+    --white: #FFFFFF;
+    --gradient-purple: linear-gradient(135deg, #6C2BD9 0%, #4A1B96 100%);
+    --gradient-accent: linear-gradient(135deg, #FF6B2C 0%, #FF8F5C 100%);
+    --gradient-bar: linear-gradient(90deg, #6C2BD9, #FF6B2C);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-size: 12px;
+    color: var(--text-dark);
+    background: #fff;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+}
+
+/* ============================================================
+   PAGE FRAME — A4 210mm x 297mm
+   ============================================================ */
+
+.page {
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+    overflow: hidden;
+    background: var(--white);
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 20px 0 50px;
+}
+
+.page:last-child {
+    page-break-after: auto;
+}
+
+/* Full-bleed pages: reset centering and padding */
+.page:has(> .cover-page),
+.page:has(> .section-divider) {
+    padding: 0;
+    justify-content: flex-start;
+}
+
+/* ============================================================
+   COVER PAGE — Aurora Gradient with Geometric SVG Shapes
+   ============================================================ */
+
+.cover-page {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(160deg, #6C2BD9 0%, #3D1196 40%, #2A0A6E 70%, #1A0545 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Aurora curves — decorative background shapes */
+.cover-page::before {
+    content: '';
+    position: absolute;
+    top: -20%;
+    right: -15%;
+    width: 70%;
+    height: 70%;
+    background: radial-gradient(ellipse at center, rgba(255, 107, 44, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(40px);
+}
+
+.cover-page::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    left: -10%;
+    width: 60%;
+    height: 50%;
+    background: radial-gradient(ellipse at center, rgba(168, 85, 247, 0.25) 0%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(50px);
+}
+
+.cover-aurora-shape {
+    position: absolute;
+    top: 10%;
+    right: 5%;
+    width: 300px;
+    height: 300px;
+    opacity: 0.12;
+}
+
+.cover-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: var(--white);
+    padding: 0 40px;
+}
+
+.cover-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 16px;
+}
+
+.cover-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 52px;
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    color: var(--white);
+    margin-bottom: 24px;
+}
+
+.cover-title span {
+    color: var(--accent);
+}
+
+.cover-divider {
+    width: 80px;
+    height: 4px;
+    background: var(--gradient-accent);
+    border-radius: 2px;
+    margin: 0 auto 24px;
+}
+
+.cover-brand {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 8px;
+}
+
+.cover-month {
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 2px;
+}
+
+.agency-logo {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-height: 40px;
+    max-width: 120px;
+    object-fit: contain;
+    z-index: 3;
+    opacity: 0.9;
+}
+
+/* ============================================================
+   SECTION DIVIDERS — Split Layout Purple/Orange
+   ============================================================ */
+
+.section-divider {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    position: relative;
+    overflow: hidden;
+}
+
+.section-divider-left {
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(180deg, #2A0A6E 0%, #1A0545 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.section-divider-left .section-number-bg {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 220px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.06);
+    position: absolute;
+    line-height: 1;
+}
+
+.section-divider-left .section-number {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 72px;
+    font-weight: 900;
+    color: var(--accent);
+    position: relative;
+    z-index: 2;
+}
+
+.section-divider-right {
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(160deg, #FF6B2C 0%, #FF8F5C 50%, #FFB088 100%);
+    display: flex;
+    align-items: center;
+    padding-left: 50px;
+    position: relative;
+}
+
+.section-divider-right::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -60px;
+    width: 120px;
+    height: 100%;
+    background: linear-gradient(160deg, #FF6B2C 0%, #FF8F5C 50%, #FFB088 100%);
+    transform: skewX(-6deg);
+}
+
+.section-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 44px;
+    font-weight: 900;
+    color: var(--white);
+    line-height: 1.1;
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   CONTENT HEADER — Gradient Top Bar
+   ============================================================ */
+
+.content-header {
+    padding: 50px 24mm 16px;
+    position: relative;
+}
+
+.content-header::before {
+    display: none;
+}
+
+.content-header h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-dark);
+    position: relative;
+    padding-bottom: 10px;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+}
+
+.content-header h2::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 48px;
+    height: 3px;
+    background: var(--gradient-accent);
+    border-radius: 2px;
+}
+
+/* ============================================================
+   KPI CARDS — Gradient Border Left
+   ============================================================ */
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 0 24mm;
+}
+
+.kpi-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 12px;
+    padding: 16px 18px;
+    position: relative;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.kpi-card--accent {
+    border-left-color: var(--accent);
+}
+
+.kpi-card__label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.kpi-card__value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--primary);
+    line-height: 1;
+}
+
+.kpi-card__value--highlight {
+    color: var(--accent);
+}
+
+.kpi-card__suffix {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+
+/* ============================================================
+   SCREENSHOT CONTAINERS
+   ============================================================ */
+
+.screenshot-container {
+    margin-top: 12px;
+}
+
+.screenshot-pair {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+.screenshot-img {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.placeholder-text {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* ============================================================
+   SUMMARY / QUOTE BOXES
+   ============================================================ */
+
+.summary-box {
+    background: var(--primary-pale);
+    border-radius: 10px;
+    padding: 14px 18px;
+    border-left: 4px solid transparent;
+    border-image: var(--gradient-bar) 1;
+    position: relative;
+}
+
+.summary-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--gradient-bar);
+    border-radius: 2px 0 0 2px;
+}
+
+.summary-box__title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.summary-box__text {
+    font-size: 11px;
+    color: var(--text-body);
+    line-height: 1.6;
+}
+
+/* ============================================================
+   TABLES — Gradient Header, Alternating Rows
+   ============================================================ */
+
+.aurora-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 10px;
+    table-layout: fixed;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.aurora-table thead th {
+    background: var(--gradient-purple);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 8px;
+    text-align: center;
+    border: none;
+}
+
+.aurora-table tbody td {
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-body);
+    font-size: 10px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.aurora-table tbody tr:nth-child(even) {
+    background: var(--primary-pale);
+}
+
+.aurora-table tbody tr:nth-child(odd) {
+    background: var(--white);
+}
+
+.aurora-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Performance table specifics */
+.performance-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 10px;
+    table-layout: fixed;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.performance-table thead th {
+    background: var(--gradient-purple);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 10px 6px;
+    text-align: center;
+    border: none;
+}
+
+.performance-table tbody td {
+    padding: 9px 6px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-body);
+    font-size: clamp(8px, 1vw, 10px);
+}
+
+.performance-table tbody tr:nth-child(even) {
+    background: var(--primary-pale);
+}
+
+.performance-table .metric-col {
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-dark);
+    padding-left: 12px;
+}
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============================================================
+   CHECKLIST — Promotion Tools
+   ============================================================ */
+
+.checklist-container {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.checklist-item {
+    font-size: 10px;
+    color: var(--text-body);
+    padding: 8px 12px;
+    background: var(--primary-pale);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.checklist-item::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    border-radius: 50%;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 10px;
+}
+
+.checklist-item--active::before {
+    background-color: var(--success-green);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+.checklist-item--inactive::before {
+    background-color: var(--error-red);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='18' y1='6' x2='6' y2='18'%3E%3C/line%3E%3Cline x1='6' y1='6' x2='18' y2='18'%3E%3C/line%3E%3C/svg%3E");
+}
+
+.checklist-item--inactive {
+    background: #FEF2F2;
+    color: var(--text-muted);
+}
+
+/* ============================================================
+   REVENUE ACCENT BOX
+   ============================================================ */
+
+.revenue-accent-box {
+    background: var(--gradient-purple);
+    border-radius: 14px;
+    padding: 18px 28px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(108, 43, 217, 0.2);
+}
+
+.revenue-accent-box.centered {
+    display: inline-block;
+}
+
+.revenue-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+}
+
+.revenue-val {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 26px;
+    font-weight: 900;
+    color: var(--white);
+}
+
+/* ============================================================
+   HORIZONTAL METRICS TABLE (Ads Performance)
+   ============================================================ */
+
+.horizontal-metrics-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.horizontal-metrics-table thead th {
+    background: var(--primary-pale);
+    color: var(--primary);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 10px 6px;
+    text-align: center;
+    border-bottom: 2px solid var(--primary);
+}
+
+.horizontal-metrics-table tbody td {
+    padding: 12px 6px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dark);
+    background: var(--white);
+}
+
+/* ============================================================
+   MINI SUMMARY TABLE (Donut comparison)
+   ============================================================ */
+
+.mini-summary-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.mini-summary-table thead th {
+    background: var(--gradient-purple);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 10px 20px;
+    text-align: center;
+}
+
+.mini-summary-table tbody td {
+    padding: 12px 20px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-dark);
+    background: var(--white);
+    border-top: 1px solid var(--border);
+}
+
+/* ============================================================
+   BLUE-HEADER TABLE (reused name for TikTok compat)
+   ============================================================ */
+
+.blue-header-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 10px;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.blue-header-table thead th {
+    background: var(--gradient-purple);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 10px;
+    padding: 10px 8px;
+    text-align: center;
+    border: none;
+}
+
+.blue-header-table tbody td {
+    padding: 10px 8px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-body);
+    font-size: 11px;
+}
+
+.blue-header-table tbody tr:nth-child(even) {
+    background: var(--primary-pale);
+}
+
+/* ============================================================
+   CPAS TABLE
+   ============================================================ */
+
+.cpas-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 10px;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.cpas-table thead th {
+    background: var(--gradient-purple);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    padding: 8px 6px;
+    text-align: center;
+    border: none;
+}
+
+.cpas-table tbody td {
+    padding: 8px 6px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-body);
+    font-size: 10px;
+}
+
+.cpas-table tbody tr:nth-child(even) {
+    background: var(--primary-pale);
+}
+
+.cpas-table .objective-col {
+    background: var(--primary-deep);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    text-align: center;
+    vertical-align: middle;
+    letter-spacing: 0.3px;
+}
+
+/* ============================================================
+   ACTION TABLE — Priority Badges
+   ============================================================ */
+
+.action-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 10px;
+    table-layout: fixed;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.action-table .table-header th {
+    background: var(--gradient-purple);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 10px 8px;
+    text-align: center;
+    border: none;
+}
+
+.action-table tbody td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-body);
+    font-size: 10px;
+    vertical-align: top;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.action-table .zebra-row:nth-child(even) {
+    background: var(--primary-pale);
+}
+
+.priority-badge {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-align: center;
+}
+
+.priority-high {
+    background: linear-gradient(135deg, #DC2626, #EF4444);
+    color: #fff;
+}
+
+.priority-medium {
+    background: var(--gradient-accent);
+    color: #fff;
+}
+
+.priority-low {
+    background: linear-gradient(135deg, #6C2BD9, #A855F7);
+    color: #fff;
+}
+
+/* ============================================================
+   PRODUCT TABLE
+   ============================================================ */
+
+.product-photo-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+}
+
+.product-photo-img {
+    max-width: 45px;
+    max-height: 45px;
+    object-fit: contain;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+/* ============================================================
+   BEST CAMPAIGN
+   ============================================================ */
+
+.best-campaign-container {
+    padding: 0 24mm;
+}
+
+.best-campaign-item {
+    padding: 0;
+}
+
+.best-campaign-image-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.best-campaign-img {
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    object-fit: contain;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-page);
+}
+
+.best-campaign-image-placeholder {
+    width: 100%;
+    aspect-ratio: 9 / 16;
+    background: var(--primary-pale);
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.best-campaign-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 10px;
+    overflow: hidden;
+    font-size: 10px;
+    box-shadow: 0 2px 8px rgba(108, 43, 217, 0.06);
+}
+
+.best-campaign-table thead th {
+    background: var(--gradient-purple);
+    color: var(--white);
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    padding: 10px 6px;
+    text-align: center;
+}
+
+.best-campaign-table tbody td {
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-body);
+    background: var(--white);
+    border-top: 1px solid var(--border);
+}
+
+/* ============================================================
+   CHART PLACEHOLDER
+   ============================================================ */
+
+.chart-placeholder {
+    position: relative;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.chart-img-placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* ============================================================
+   PAGE FOOTER — Gradient Line + Text
+   ============================================================ */
+
+.page-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0 24mm 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    font-size: 8px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.page-footer::before {
+    content: '';
+    position: absolute;
+    bottom: 30px;
+    left: 24mm;
+    right: 24mm;
+    height: 2px;
+    background: var(--gradient-bar);
+    border-radius: 1px;
+    opacity: 0.4;
+}
+
+/* ============================================================
+   AURORA DECORATIVE ELEMENTS
+   ============================================================ */
+
+.aurora-decoration {
+    position: absolute;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.aurora-blob-tr {
+    top: -40px;
+    right: -40px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+.aurora-blob-bl {
+    bottom: 40px;
+    left: -30px;
+    width: 160px;
+    height: 160px;
+    background: radial-gradient(circle, rgba(255, 107, 44, 0.06) 0%, transparent 70%);
+    border-radius: 50%;
+}
+
+/* ============================================================
+   PRINT OVERRIDES
+   ============================================================ */
+
+@media print {
+    .page {
+        page-break-after: always;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .page:last-child {
+        page-break-after: auto;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
+
+@page {
+    size: A4;
+    margin: 0;
+}

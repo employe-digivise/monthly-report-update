@@ -65,7 +65,7 @@ Currently no API key authentication is required. Access is controlled via CORS o
   "brandName": "AMK",
   "reportMonth": "JANUARY",
   "reportYear": "2026",
-  "template": "default",
+  "template": "aurora",
   "showLogo": true,
   "logoUrl": "https://example.com/logo.png",
   "footerText": "CONFIDENTIAL - DIGIVISE REPORT 2026",
@@ -269,7 +269,8 @@ Currently no API key authentication is required. Access is controlled via CORS o
 
 ### Template Selection
 - `template` (string, optional): Report visual style
-  - `"default"` - Atria template (blue theme) — **default if omitted**
+  - `"aurora"` - Aurora template (purple & orange theme) — **default if omitted**
+  - `"default"` - Atria template (blue theme)
   - `"corporate"` - Corporate template (purple theme)
   - `"dashboard"` - Dashboard template (card-based gray theme)
 
@@ -306,6 +307,7 @@ Numeric metrics are clamped to valid ranges:
 The report includes pie charts on **Page 9** (Store Performance) and **Page 16** (TikTok Store Performance).
 
 **Color Scheme (varies by template):**
+- **Aurora**: Primary `#6C2BD9`, Accent `#FF6B2C`, Tertiary `#A855F7` *(default)*
 - **Default**: Primary `#002B5B`, Accent `#F59E0B`, Tertiary `#10B981`
 - **Corporate**: Primary `#6B21A8`, Accent `#EA580C`, Tertiary `#7C3AED`
 - **Dashboard**: Primary `#002B5B`, Accent `#F59E0B`, Tertiary `#10B981`
@@ -537,5 +539,5 @@ curl -X POST http://localhost:3000/webhook/lovable \
 
 ---
 
-**Last Updated**: 2026-03-27
+**Last Updated**: 2026-03-30
 **Server Status**: Running on `localhost:3000`

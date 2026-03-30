@@ -216,7 +216,7 @@ async function handleReportGeneration(req, res) {
         }
 
         // Validate template parameter
-        const validTemplates = ['default', 'corporate', 'dashboard'];
+        const validTemplates = ['default', 'corporate', 'dashboard', 'aurora'];
         if (data.template && !validTemplates.includes(data.template)) {
             return res.status(400).json({
                 success: false,
@@ -224,7 +224,7 @@ async function handleReportGeneration(req, res) {
                 requestId: reqId
             });
         }
-        if (!data.template) data.template = 'default';
+        if (!data.template) data.template = 'aurora';
 
         console.log(`[${reqId}] Received request for brand: ${data.brandName}`);
 

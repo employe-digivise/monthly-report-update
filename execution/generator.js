@@ -36,6 +36,16 @@ const TEMPLATE_CONFIG = {
             tertiary: '#10B981',
             centerText: '#002B5B'
         }
+    },
+    aurora: {
+        css: 'styles_aurora.css',
+        ejs: 'template_aurora.ejs',
+        colors: {
+            primary: '#6C2BD9',
+            accent: '#FF6B2C',
+            tertiary: '#A855F7',
+            centerText: '#6C2BD9'
+        }
     }
 };
 
@@ -218,10 +228,10 @@ function buildDonutChartSVG(segments, opts) {
     });
     // Center hole
     parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" />`);
-    if (opts.centerLabel) {
+    if (opts.centerLabel && !opts.hideCenterLabel) {
         parts.push(`<text x="${cx}" y="${cy - 8}" text-anchor="middle" font-size="10" font-weight="600" fill="#6b7280">${opts.centerLabel}</text>`);
     }
-    if (opts.centerValue !== undefined) {
+    if (opts.centerValue !== undefined && !opts.hideCenterLabel) {
         parts.push(`<text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="16" font-weight="900" fill="${opts.centerColor || '#002B5B'}">${opts.centerValue}</text>`);
     }
 
@@ -235,7 +245,7 @@ async function generatePDF(data) {
     _currentWarnings = []; // Reset warnings for this generation
 
     // Resolve template configuration
-    const templateKey = (data.template && TEMPLATE_CONFIG[data.template]) ? data.template : 'default';
+    const templateKey = (data.template && TEMPLATE_CONFIG[data.template]) ? data.template : 'aurora';
     const templateConfig = TEMPLATE_CONFIG[templateKey];
     console.log(`Using template: ${templateKey}`);
     let browser = null;
@@ -486,7 +496,7 @@ async function generatePDF(data) {
                 { pct: adSalesPct, color: templateConfig.colors.primary, label: 'NEW BUYERS' },
                 { pct: existingPct, color: templateConfig.colors.accent, label: 'OLD BUYERS' }
             ],
-            { cx: 130, cy: 130, r: 80, rout: 105, width: 260, height: 260, displayWidth: 210, displayHeight: 210, centerLabel: 'AD SALES', centerValue: adSalesPct.toFixed(1) + '%', centerColor: templateConfig.colors.centerText }
+            { cx: 130, cy: 130, r: 80, rout: 105, width: 260, height: 260, displayWidth: 210, displayHeight: 210, centerLabel: 'AD SALES', centerValue: adSalesPct.toFixed(1) + '%', centerColor: templateConfig.colors.centerText, hideCenterLabel: templateKey === 'aurora' }
         );
 
         let tiktokDonutSvg = '';
