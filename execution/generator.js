@@ -333,6 +333,14 @@ async function generatePDF(data) {
             }
         }
 
+        // DEBUG: Log chart data as received from request
+        if (data.globalRevenue && data.globalRevenue.chartData) {
+            console.log('[CHART DEBUG] Raw chartData received:');
+            console.log('[CHART DEBUG] labels:', JSON.stringify(data.globalRevenue.chartData.labels));
+            console.log('[CHART DEBUG] revenueData:', JSON.stringify(data.globalRevenue.chartData.revenueData));
+            console.log('[CHART DEBUG] adsSpentData:', JSON.stringify(data.globalRevenue.chartData.adsSpentData));
+        }
+
         // Global Revenue Chart Data Filtering: Remove months where both Revenue and Ads Spent are 0
         if (data.globalRevenue && data.globalRevenue.chartData) {
             const { labels, revenueData, adsSpentData } = data.globalRevenue.chartData;
@@ -356,6 +364,12 @@ async function generatePDF(data) {
                 data.globalRevenue.chartData.labels = filteredLabels;
                 data.globalRevenue.chartData.revenueData = filteredRevenue;
                 data.globalRevenue.chartData.adsSpentData = filteredAds;
+
+                // DEBUG: Log filtered chart data that will be rendered
+                console.log('[CHART DEBUG] Filtered chartData for rendering:');
+                console.log('[CHART DEBUG] labels:', JSON.stringify(filteredLabels));
+                console.log('[CHART DEBUG] revenueData:', JSON.stringify(filteredRevenue));
+                console.log('[CHART DEBUG] adsSpentData:', JSON.stringify(filteredAds));
             }
         }
 

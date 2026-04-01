@@ -991,6 +991,8 @@ html, body {
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
     }
 }
 

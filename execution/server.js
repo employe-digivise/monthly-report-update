@@ -234,9 +234,12 @@ async function handleReportGeneration(req, res) {
         const warnings = result.warnings || [];
         const fileName = path.basename(pdfPath);
 
-        // Construct the full download URL using the host header (or tunnel URL if known)
-        // For localtunnel, req.get('host') effectively returns the tunnel domain.
+        // Construct the full download URL
         const downloadUrl = `${req.protocol}://${req.get('host')}/output/${fileName}`;
+
+        // Read PDF and convert to base64
+        const pdfBuffer = fs.readFileSync(pdfPath);
+        const pdfBase64 = pdfBuffer.toString('base64');
 
         console.log(`[${reqId}] PDF generated: ${fileName}`);
         if (warnings.length > 0) {
@@ -250,7 +253,8 @@ async function handleReportGeneration(req, res) {
             downloadUrl: downloadUrl,
             requestId: reqId,
             data: {
-                pdfUrl: downloadUrl
+                pdfUrl: downloadUrl,
+                pdfBase64: pdfBase64
             }
         };
         if (warnings.length > 0) {
