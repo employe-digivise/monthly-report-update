@@ -845,51 +845,14 @@
     </div>
 </div>
 
-<!-- Tokopedia Store Performance -->
-<div class="page">
-    <div class="content-header"><h2>Store Performance</h2></div>
-    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24mm;gap:20px;">
-        <div class="revenue-accent-box centered">
-            <p class="revenue-label">Total Revenue</p>
-            <p class="revenue-val">Rp<%= tokopedia_data.store_performance.total_revenue.toLocaleString('id-ID') %></p>
-        </div>
-
-        <% var _tkc=tokopedia_data.store_performance.composition; var tkComp=_tkc;
-           var pOrganic=_tkc.organic.percentage||0; var pAds=_tkc.ads.percentage||0; var pAffiliate=_tkc.affiliate.percentage||0; %>
-        <div style="display:flex;justify-content:center;">
-            <%- tokopediaDonutSvg %>
-        </div>
-
-        <table class="blue-header-table" style="width:85%;">
-            <thead><tr><th>Organic</th><th>Ads</th><th>Affiliate</th></tr></thead>
-            <tbody><tr>
-                <td style="font-weight:700;font-size:13px;">Rp<%= tkComp.organic.revenue.toLocaleString('id-ID') %></td>
-                <td style="font-weight:700;font-size:13px;">Rp<%= tkComp.ads.revenue.toLocaleString('id-ID') %></td>
-                <td style="font-weight:700;font-size:13px;">Rp<%= tkComp.affiliate.revenue.toLocaleString('id-ID') %></td>
-            </tr></tbody>
-        </table>
-
-        <div style="width:100%;">
-            <div class="summary-box">
-                <p class="summary-box__title">Summary</p>
-                <ul style="padding-left:16px;list-style-type:disc;margin:0;">
-                    <% tokopedia_data.store_performance.summary.forEach(point => { %>
-                        <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point %></li>
-                    <% }) %>
-                </ul>
-            </div>
-        </div>
-    </div>
-    <div class="page-footer">
-        <span><%= brandName %> | <%= reportMonth %></span>
-        <span>Page <%= nextPage() %></span>
-    </div>
-</div>
-
 <!-- Tokopedia Ads Performance -->
 <div class="page">
     <div class="content-header"><h2>Ads Performance</h2></div>
     <div style="padding:0 24mm;">
+        <div class="revenue-accent-box centered" style="margin-bottom:20px;">
+            <p class="revenue-label">Total Revenue</p>
+            <p class="revenue-val">Rp<%= tokopedia_data.total_revenue.toLocaleString('id-ID') %></p>
+        </div>
         <table class="blue-header-table">
             <thead>
                 <tr>

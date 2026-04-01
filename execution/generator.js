@@ -285,7 +285,7 @@ async function generatePDF(data) {
         // Tokopedia Safety Check
         if (data.enabledChannels && data.enabledChannels.tokopedia && !data.tokopedia_data) {
             console.warn('Tokopedia enabled but no data provided. initializing empty structure.');
-            data.tokopedia_data = { store_performance: { total_revenue: 0, composition: { organic: { percentage: 0, revenue: 0 }, ads: { percentage: 0, revenue: 0 }, affiliate: { percentage: 0, revenue: 0 } }, summary: [] }, ads_performance: { metrics: [], period: [] } };
+            data.tokopedia_data = { total_revenue: 0, ads_performance: { metrics: [], period: [] } };
         }
 
         // shopeeAdsMetrics Safety Check
@@ -540,25 +540,11 @@ async function generatePDF(data) {
             );
         }
 
-        let tokopediaDonutSvg = '';
-        if (data.tokopedia_data && data.tokopedia_data.store_performance && data.tokopedia_data.store_performance.composition) {
-            const tkComp = data.tokopedia_data.store_performance.composition;
-            tokopediaDonutSvg = buildDonutChartSVG(
-                [
-                    { pct: tkComp.organic?.percentage || 0, color: templateConfig.colors.primary, label: 'ORGANIC' },
-                    { pct: tkComp.ads?.percentage || 0, color: templateConfig.colors.accent, label: 'ADS' },
-                    { pct: tkComp.affiliate?.percentage || 0, color: templateConfig.colors.tertiary, label: 'AFFILIATE' }
-                ],
-                { cx: 125, cy: 125, r: 75, rout: 100, width: 250, height: 250, displayWidth: 190, displayHeight: 190, centerLabel: 'KOMPOSISI', centerColor: templateConfig.colors.centerText }
-            );
-        }
-
         const html = await ejs.render(templateContent, {
             ...data,
             cssContent: cssContent,
             shopeeDonutSvg: shopeeDonutSvg,
-            tiktokDonutSvg: tiktokDonutSvg,
-            tokopediaDonutSvg: tokopediaDonutSvg
+            tiktokDonutSvg: tiktokDonutSvg
         }, { async: true });
 
         // 5. PUPPETEER RENDER

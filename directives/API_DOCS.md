@@ -319,19 +319,7 @@ Currently no API key authentication is required. Access is controlled via CORS o
   },
 
   "tokopedia_data": {
-    "store_performance": {
-      "total_revenue": 50000000,
-      "composition": {
-        "organic": { "revenue": 30000000, "percentage": 60.0 },
-        "ads": { "revenue": 12500000, "percentage": 25.0 },
-        "affiliate": { "revenue": 7500000, "percentage": 15.0 }
-      },
-      "summary": [
-        "Revenue Tokopedia mencapai Rp50jt, naik 20% dari bulan lalu.",
-        "Organic traffic mendominasi 60% total revenue.",
-        "Program affiliate mulai menunjukkan hasil dengan 15% kontribusi."
-      ]
-    },
+    "total_revenue": 50000000,
     "ads_performance": {
       "period": ["Dec 2025", "Jan 2026"],
       "metrics": [
@@ -471,26 +459,15 @@ The TikTok donut chart shows Video / Live Streaming / Product Card composition.
 - Labels are positioned outside the pie chart
 - Revenue amounts are shown in the accompanying table below each chart
 
-### Pie Chart — Tokopedia Store Performance
-The Tokopedia donut chart shows Organic / Ads / Affiliate composition.
+### Tokopedia Performance
+Tokopedia section shows a **Total Revenue card** and **Ads Performance table** (no store performance/donut chart).
 
-**`tokopedia_data.store_performance` fields:**
+**`tokopedia_data` fields:**
 | Field | Type | Keterangan |
 |-------|------|------------|
-| `total_revenue` | number | Total revenue Tokopedia (Rupiah) |
-| `composition.organic.percentage` | number (0-100) | Persentase revenue organic |
-| `composition.organic.revenue` | number | Revenue organic (Rupiah) |
-| `composition.ads.percentage` | number (0-100) | Persentase revenue ads |
-| `composition.ads.revenue` | number | Revenue ads (Rupiah) |
-| `composition.affiliate.percentage` | number (0-100) | Persentase revenue affiliate |
-| `composition.affiliate.revenue` | number | Revenue affiliate (Rupiah) |
-| `summary` | array of strings | Summary points |
-
-**`tokopedia_data.ads_performance` fields:**
-| Field | Type | Keterangan |
-|-------|------|------------|
-| `period` | array [2] | Periode perbandingan (e.g., ["Feb 2026", "Mar 2026"]) |
-| `metrics` | array | Array of metric rows with `metric`, `prev`, `current`, `growth` |
+| `total_revenue` | number | Total revenue Tokopedia (Rupiah). Ditampilkan di card atas. |
+| `ads_performance.period` | array [2] | Periode perbandingan (e.g., ["Dec 2025", "Jan 2026"]) |
+| `ads_performance.metrics` | array | Array of metric rows with `metric`, `prev`, `current`, `growth` |
 
 
 ### Global Performance Table (Page 7) - Dynamic Columns
