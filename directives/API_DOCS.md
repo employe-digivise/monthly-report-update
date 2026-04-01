@@ -82,14 +82,16 @@ Currently no API key authentication is required. Access is controlled via CORS o
   "showLogo": true,
   "logoUrl": "https://example.com/logo.png",
   "footerText": "CONFIDENTIAL - DIGIVISE REPORT 2026",
+
   "enabledChannels": {
     "shopee": true,
-    "tiktok": false,
-    "tokopedia": false,
+    "tiktok": true,
+    "tokopedia": true,
     "lazada": false,
     "blibli": false,
     "cpas": true
   },
+
   "metrics": {
     "unfulfilledOrders": 0,
     "lateShipment": 0,
@@ -97,10 +99,12 @@ Currently no API key authentication is required. Access is controlled via CORS o
     "overallRating": 4.8,
     "summary": "Performa toko bulan ini menunjukkan peningkatan signifikan."
   },
+
   "operationalScreenshots": [
     "https://example.com/screenshot1.png",
     "https://example.com/screenshot2.png"
   ],
+
   "promotionTools": {
     "paketDiskon": true,
     "gratisOngkirXTRA": true,
@@ -109,10 +113,12 @@ Currently no API key authentication is required. Access is controlled via CORS o
     "komboHemat": true,
     "chatBroadcast": true
   },
+
   "promotionScreenshots": [
     "https://example.com/promo1.png",
     "https://example.com/promo2.png"
   ],
+
   "globalRevenue": {
     "totalRevenue": 695436115,
     "totalOrders": 4636,
@@ -123,6 +129,7 @@ Currently no API key authentication is required. Access is controlled via CORS o
     },
     "summary": "Revenue meningkat 58.87% dibanding bulan lalu."
   },
+
   "globalPerformanceDetail": {
     "comparisonData": [
       {
@@ -131,9 +138,9 @@ Currently no API key authentication is required. Access is controlled via CORS o
         "lastMonth": "Rp438M",
         "growth": "+58.87%",
         "channels": {
-          "shopee": "Rp647M",
+          "shopee": "Rp597M",
           "tiktok": "Rp49M",
-          "tokopedia": "Rp0",
+          "tokopedia": "Rp50M",
           "lazada": "Rp0",
           "blibli": "Rp0"
         }
@@ -146,7 +153,7 @@ Currently no API key authentication is required. Access is controlled via CORS o
         "channels": {
           "shopee": "Rp72M",
           "tiktok": "Rp4M",
-          "tokopedia": "Rp0",
+          "tokopedia": "Rp4M",
           "lazada": "Rp0",
           "blibli": "Rp0"
         }
@@ -157,9 +164,9 @@ Currently no API key authentication is required. Access is controlled via CORS o
         "lastMonth": "12.98%",
         "growth": "-11.43%",
         "channels": {
-          "shopee": "11.13%",
+          "shopee": "12.06%",
           "tiktok": "8.93%",
-          "tokopedia": "0%",
+          "tokopedia": "8.00%",
           "lazada": "0%",
           "blibli": "0%"
         }
@@ -170,17 +177,22 @@ Currently no API key authentication is required. Access is controlled via CORS o
         "lastMonth": "7.71x",
         "growth": "+12.91%",
         "channels": {
-          "shopee": "8.98x",
+          "shopee": "8.29x",
           "tiktok": "11.20x",
-          "tokopedia": "0x",
+          "tokopedia": "12.50x",
           "lazada": "0x",
           "blibli": "0x"
         }
       }
     ],
-    "summary": "This is a summary of the global performance.",
-    "aiConclusion": []
+    "summary": "Revenue keseluruhan meningkat 58.87% MoM. Shopee tetap kontributor utama, TikTok dan Tokopedia menunjukkan pertumbuhan positif.",
+    "aiConclusion": [
+      "Shopee masih mendominasi 86% total revenue.",
+      "TikTok ROAS tertinggi di 11.20x, efisiensi ads paling baik.",
+      "Tokopedia mulai berkontribusi dengan ROAS 12.50x."
+    ]
   },
+
   "storePerformance": {
     "newBuyers": 60,
     "oldBuyers": 40,
@@ -189,6 +201,7 @@ Currently no API key authentication is required. Access is controlled via CORS o
     "totalRevenue": 695436115,
     "notes": ""
   },
+
   "shopeeAdsMetrics": {
     "dilihat": 2845336,
     "ctr": "4.82%",
@@ -197,7 +210,11 @@ Currently no API key authentication is required. Access is controlled via CORS o
     "penjualan": "Rp 246M",
     "biaya": "Rp 25M"
   },
+
+  "shopeeAdsSummary": "Performa iklan Shopee bulan ini stabil dengan CTR 4.82% dan CPC Rp186. Total penjualan dari ads mencapai Rp246M.",
+
   "adsChartUrl": "https://example.com/ads-performance-chart.png",
+
   "topProducts": [
     {
       "name": "AMK Kemeja Koko Pria Lengan Pendek KK HADDID S/S Brown",
@@ -212,27 +229,49 @@ Currently no API key authentication is required. Access is controlled via CORS o
       "soldPercent": "19.95%",
       "qty": 83,
       "revenue": 11015167
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Lengan Panjang KK ARZAN L/S Black",
+      "image": "https://example.com/product3.jpg",
+      "soldPercent": "15.30%",
+      "qty": 64,
+      "revenue": 8960000
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Lengan Pendek KK FAHRI S/S White",
+      "image": "https://example.com/product4.jpg",
+      "soldPercent": "12.10%",
+      "qty": 50,
+      "revenue": 7250000
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Premium KK RIZAL L/S Navy",
+      "image": "https://example.com/product5.jpg",
+      "soldPercent": "8.45%",
+      "qty": 35,
+      "revenue": 5425000
     }
   ],
+
   "cpas_data": {
     "period": ["Dec 25", "Jan 26"],
     "awareness_nv": [
-      { "metric": "Ads Spend", "prev": "Rp 0", "current": "Rp 0", "growth": "0%" },
-      { "metric": "Impression", "prev": "0", "current": "0", "growth": "0%" },
-      { "metric": "Link Clicks", "prev": "0", "current": "0", "growth": "0%" },
-      { "metric": "CTR (%)", "prev": "0%", "current": "0%", "growth": "0%" },
-      { "metric": "CPC (Rp)", "prev": "Rp 0", "current": "Rp 0", "growth": "0%" }
+      { "metric": "Ads Spend", "prev": "Rp 5.000.000", "current": "Rp 7.500.000", "growth": "+50%" },
+      { "metric": "Impression", "prev": "1.200.000", "current": "1.800.000", "growth": "+50%" },
+      { "metric": "Link Clicks", "prev": "24.000", "current": "36.000", "growth": "+50%" },
+      { "metric": "CTR (%)", "prev": "2.0%", "current": "2.0%", "growth": "0%" },
+      { "metric": "CPC (Rp)", "prev": "Rp 208", "current": "Rp 208", "growth": "0%" }
     ],
     "conversion_rm": [
-      { "metric": "Ads Spend", "prev": "Rp 0", "current": "Rp 0", "growth": "0%" },
-      { "metric": "Frequency", "prev": "0", "current": "0", "growth": "0%" },
-      { "metric": "Revenue", "prev": "Rp 0", "current": "Rp 0", "growth": "0%" },
-      { "metric": "Transaction", "prev": "0", "current": "0", "growth": "0%" },
-      { "metric": "ROAS", "prev": "0", "current": "0", "growth": "0%" }
+      { "metric": "Ads Spend", "prev": "Rp 8.000.000", "current": "Rp 10.000.000", "growth": "+25%" },
+      { "metric": "Frequency", "prev": "2.3", "current": "2.5", "growth": "+8.7%" },
+      { "metric": "Revenue", "prev": "Rp 56.000.000", "current": "Rp 64.000.000", "growth": "+14.3%" },
+      { "metric": "Transaction", "prev": "980", "current": "1.200", "growth": "+22.4%" },
+      { "metric": "ROAS", "prev": "7.0x", "current": "6.4x", "growth": "-8.6%" }
     ],
     "best_campaigns": {
       "nv": {
-        "name": "Campaign NV Name",
+        "name": "AMK - Awareness Jan 2026",
         "impression": 1234567,
         "ctr": "3.5%",
         "spend": "Rp5M",
@@ -241,7 +280,7 @@ Currently no API key authentication is required. Access is controlled via CORS o
         "images": ["https://example.com/nv1.jpg", "https://example.com/nv2.jpg"]
       },
       "rm": {
-        "name": "Campaign RM Name",
+        "name": "AMK - Retargeting Jan 2026",
         "frequency": 2.5,
         "spend": "Rp8M",
         "revenue": "Rp64M",
@@ -251,6 +290,7 @@ Currently no API key authentication is required. Access is controlled via CORS o
       }
     }
   },
+
   "tiktok_data": {
     "store_performance": {
       "total_revenue": 79298108,
@@ -259,16 +299,25 @@ Currently no API key authentication is required. Access is controlled via CORS o
         "live_streaming": { "revenue": 10280229, "percentage": 13.0 },
         "product_card": { "revenue": 43648821, "percentage": 55.0 }
       },
-      "summary": ["Summary point 1", "Summary point 2"]
+      "summary": [
+        "Revenue TikTok Shop meningkat 15% MoM mencapai Rp79.3jt.",
+        "Product Card mendominasi 55% dari total revenue.",
+        "Live streaming masih perlu ditingkatkan, hanya 13% kontribusi."
+      ]
     },
     "gmv_max_performance": {
       "period": ["Dec 2025", "Jan 2026"],
       "metrics": [
-        { "metric": "Ads Spend", "prev": "Rp17M", "current": "Rp18M", "growth": "3.48%" },
-        { "metric": "Gross Revenue", "prev": "Rp332M", "current": "Rp361M", "growth": "8.76%" }
+        { "metric": "Ads Spend", "prev": "Rp17M", "current": "Rp18M", "growth": "+3.48%" },
+        { "metric": "Gross Revenue", "prev": "Rp332M", "current": "Rp361M", "growth": "+8.76%" },
+        { "metric": "ROAS", "prev": "19.5x", "current": "20.1x", "growth": "+3.08%" },
+        { "metric": "CPA", "prev": "Rp12.500", "current": "Rp11.800", "growth": "-5.6%" },
+        { "metric": "Impression", "prev": "2.500.000", "current": "2.800.000", "growth": "+12%" },
+        { "metric": "CTR", "prev": "3.2%", "current": "3.5%", "growth": "+9.38%" }
       ]
     }
   },
+
   "tokopedia_data": {
     "store_performance": {
       "total_revenue": 50000000,
@@ -277,21 +326,62 @@ Currently no API key authentication is required. Access is controlled via CORS o
         "ads": { "revenue": 12500000, "percentage": 25.0 },
         "affiliate": { "revenue": 7500000, "percentage": 15.0 }
       },
-      "summary": ["Summary point 1", "Summary point 2"]
+      "summary": [
+        "Revenue Tokopedia mencapai Rp50jt, naik 20% dari bulan lalu.",
+        "Organic traffic mendominasi 60% total revenue.",
+        "Program affiliate mulai menunjukkan hasil dengan 15% kontribusi."
+      ]
     },
     "ads_performance": {
-      "period": ["Feb 2026", "Mar 2026"],
+      "period": ["Dec 2025", "Jan 2026"],
       "metrics": [
-        { "metric": "Ads Spend", "prev": "Rp 1.000.000", "current": "Rp 1.500.000", "growth": "50%" },
-        { "metric": "Impression", "prev": "500.000", "current": "750.000", "growth": "50%" },
-        { "metric": "Click", "prev": "10.000", "current": "15.000", "growth": "50%" },
+        { "metric": "Ads Spend", "prev": "Rp 1.000.000", "current": "Rp 1.500.000", "growth": "+50%" },
+        { "metric": "Impression", "prev": "500.000", "current": "750.000", "growth": "+50%" },
+        { "metric": "Click", "prev": "10.000", "current": "15.000", "growth": "+50%" },
         { "metric": "CTR (%)", "prev": "2.0%", "current": "2.0%", "growth": "0%" },
-        { "metric": "Revenue", "prev": "Rp 10.000.000", "current": "Rp 12.500.000", "growth": "25%" },
+        { "metric": "Revenue", "prev": "Rp 10.000.000", "current": "Rp 12.500.000", "growth": "+25%" },
         { "metric": "ROAS", "prev": "10.0x", "current": "8.3x", "growth": "-17%" }
       ]
     }
   },
-  "actionPlan": []
+
+  "actionPlan": [
+    {
+      "priority": "High",
+      "problem": "Live streaming TikTok hanya kontribusi 13% revenue",
+      "solution": "Tingkatkan frekuensi live menjadi 5x/minggu dengan host dedicated dan promo exclusive live",
+      "pic": "Tim Content",
+      "deadline": "Feb 2026"
+    },
+    {
+      "priority": "High",
+      "problem": "CPC Shopee Ads masih tinggi di Rp186",
+      "solution": "Optimasi keyword bidding, fokus ke long-tail keyword dengan CPC lebih rendah",
+      "pic": "Tim Ads",
+      "deadline": "Feb 2026"
+    },
+    {
+      "priority": "Medium",
+      "problem": "Tokopedia affiliate masih 15%, belum maksimal",
+      "solution": "Rekrut 10 affiliate baru dan buat program komisi bertingkat",
+      "pic": "Tim Partnership",
+      "deadline": "Mar 2026"
+    },
+    {
+      "priority": "Medium",
+      "problem": "CPAS ROAS menurun dari 7.0x ke 6.4x",
+      "solution": "Review audience targeting, exclude non-converting segments, refresh creative assets",
+      "pic": "Tim Ads",
+      "deadline": "Feb 2026"
+    },
+    {
+      "priority": "Low",
+      "problem": "Chat response rate perlu dipertahankan di atas 95%",
+      "solution": "Setup auto-reply untuk FAQ dan monitoring respons di luar jam kerja",
+      "pic": "Tim CS",
+      "deadline": "Feb 2026"
+    }
+  ]
 }
 ```
 
@@ -336,6 +426,14 @@ Currently no API key authentication is required. Access is controlled via CORS o
 - `tokopedia_data` (object): Tokopedia performance data
   - **If missing**: Tokopedia section will be skipped
   - **Default**: `null`
+
+- `shopeeAdsSummary` (string): Summary text for Shopee Ads performance section
+  - **If missing**: Summary box will not be shown
+  - **Default**: `""`
+
+- `actionPlan` (array): Action plan items (max 5 rows)
+  - Each item: `{ priority, problem, solution, pic, deadline }`
+  - **If missing**: Action plan table will be empty
 
 ### Metrics Validation
 Numeric metrics are clamped to valid ranges:
