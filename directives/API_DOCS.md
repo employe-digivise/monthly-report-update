@@ -1,29 +1,42 @@
 # API Documentation for PDF Report Generator
 
+## Base URL
+
+| Environment | URL |
+|-------------|-----|
+| **Production (VPS)** | `http://31.97.222.83:9006` |
+| Local Development | `http://localhost:3000` |
+
+---
+
 ## Endpoints
 
-### Webhook Endpoint
+### Generate Report (Webhook)
 **URL**: `{BASE_URL}/webhook/lovable`
 **Method**: `POST`
 **Headers**:
 - `Content-Type: application/json`
 
-### Alternative Endpoint (Manual Report Generation)
+### Generate Report (Alternative)
 **URL**: `{BASE_URL}/generate-report`
 **Method**: `POST`
 **Headers**:
 - `Content-Type: application/json`
 
+> Both endpoints accept the same request body and return the same response format.
+
 ### Health Check
 **URL**: `{BASE_URL}/health`
 **Method**: `GET`
-**Response**: Server status, uptime, memory usage
-
-### Local Testing
-**URL**: `http://localhost:3000/webhook/lovable`
-**Method**: `POST`
-**Headers**:
-- `Content-Type: application/json`
+**Response**:
+```json
+{
+  "status": "ok",
+  "uptime": 54012,
+  "memory": "70MB",
+  "timestamp": "2026-03-31T07:37:35.755Z"
+}
+```
 
 ---
 
@@ -52,7 +65,7 @@
 All responses include: `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, `Referrer-Policy`
 
 ### Authentication
-Currently no API key authentication is required. Access is controlled via CORS origins and network-level security (e.g., ngrok, VPN, firewall rules). For production deployments, consider adding API key or token-based authentication.
+Currently no API key authentication is required. Access is controlled via CORS origins and network-level security (VPS firewall rules). For production deployments, consider adding API key or token-based authentication.
 
 ---
 
@@ -169,8 +182,10 @@ Currently no API key authentication is required. Access is controlled via CORS o
     "aiConclusion": []
   },
   "storePerformance": {
-    "adSales": 0,
-    "existingSales": 100,
+    "newBuyers": 60,
+    "oldBuyers": 40,
+    "adSalesRevenue": 417261669,
+    "existingRevenue": 278174446,
     "totalRevenue": 695436115,
     "notes": ""
   },
@@ -254,6 +269,28 @@ Currently no API key authentication is required. Access is controlled via CORS o
       ]
     }
   },
+  "tokopedia_data": {
+    "store_performance": {
+      "total_revenue": 50000000,
+      "composition": {
+        "organic": { "revenue": 30000000, "percentage": 60.0 },
+        "ads": { "revenue": 12500000, "percentage": 25.0 },
+        "affiliate": { "revenue": 7500000, "percentage": 15.0 }
+      },
+      "summary": ["Summary point 1", "Summary point 2"]
+    },
+    "ads_performance": {
+      "period": ["Feb 2026", "Mar 2026"],
+      "metrics": [
+        { "metric": "Ads Spend", "prev": "Rp 1.000.000", "current": "Rp 1.500.000", "growth": "50%" },
+        { "metric": "Impression", "prev": "500.000", "current": "750.000", "growth": "50%" },
+        { "metric": "Click", "prev": "10.000", "current": "15.000", "growth": "50%" },
+        { "metric": "CTR (%)", "prev": "2.0%", "current": "2.0%", "growth": "0%" },
+        { "metric": "Revenue", "prev": "Rp 10.000.000", "current": "Rp 12.500.000", "growth": "25%" },
+        { "metric": "ROAS", "prev": "10.0x", "current": "8.3x", "growth": "-17%" }
+      ]
+    }
+  },
   "actionPlan": []
 }
 ```
@@ -296,6 +333,10 @@ Currently no API key authentication is required. Access is controlled via CORS o
   - **If missing**: TikTok section will be skipped
   - **Default**: `null`
 
+- `tokopedia_data` (object): Tokopedia performance data
+  - **If missing**: Tokopedia section will be skipped
+  - **Default**: `null`
+
 ### Metrics Validation
 Numeric metrics are clamped to valid ranges:
 - `unfulfilledOrders`: 0-100 (%)
@@ -303,8 +344,20 @@ Numeric metrics are clamped to valid ranges:
 - `chatResponseRate`: 0-100 (%)
 - `overallRating`: 0-5
 
-### Pie Chart Visualizations
-The report includes pie charts on **Page 9** (Store Performance) and **Page 16** (TikTok Store Performance).
+### Store Performance (Page 9) — Donut Chart
+The donut chart visualizes **New Buyers vs Old Buyers** ratio.
+
+**`storePerformance` fields:**
+| Field | Type | Keterangan |
+|-------|------|------------|
+| `newBuyers` | number (0-100) | Persentase new buyers. Ditampilkan di **donut chart**. |
+| `oldBuyers` | number (0-100) | Persentase old buyers. Ditampilkan di **donut chart**. |
+| `adSalesRevenue` | number | Revenue dari ad sales (Rupiah). Ditampilkan di **tabel**. |
+| `existingRevenue` | number | Revenue dari existing buyers (Rupiah). Ditampilkan di **tabel**. |
+| `totalRevenue` | number | Total revenue (Rupiah). Ditampilkan di KPI box atas. |
+| `notes` | string | Catatan/analisis di bawah tabel. |
+
+> Persentase `newBuyers`/`oldBuyers` di-clamp ke 0-100 dan dinormalisasi agar total = 100%.
 
 **Color Scheme (varies by template):**
 - **Aurora**: Primary `#6C2BD9`, Accent `#FF6B2C`, Tertiary `#A855F7` *(default)*
@@ -312,10 +365,34 @@ The report includes pie charts on **Page 9** (Store Performance) and **Page 16**
 - **Corporate**: Primary `#6B21A8`, Accent `#EA580C`, Tertiary `#7C3AED`
 - **Dashboard**: Primary `#002B5B`, Accent `#F59E0B`, Tertiary `#10B981`
 
+### Pie Chart (Page 16) — TikTok Store Performance
+The TikTok donut chart shows Video / Live Streaming / Product Card composition.
+
 **Data Labels:**
 - Percentages are displayed with 1 decimal precision (e.g., "32.0%")
-- Labels are positioned outside the pie chart with connecting lines
+- Labels are positioned outside the pie chart
 - Revenue amounts are shown in the accompanying table below each chart
+
+### Pie Chart — Tokopedia Store Performance
+The Tokopedia donut chart shows Organic / Ads / Affiliate composition.
+
+**`tokopedia_data.store_performance` fields:**
+| Field | Type | Keterangan |
+|-------|------|------------|
+| `total_revenue` | number | Total revenue Tokopedia (Rupiah) |
+| `composition.organic.percentage` | number (0-100) | Persentase revenue organic |
+| `composition.organic.revenue` | number | Revenue organic (Rupiah) |
+| `composition.ads.percentage` | number (0-100) | Persentase revenue ads |
+| `composition.ads.revenue` | number | Revenue ads (Rupiah) |
+| `composition.affiliate.percentage` | number (0-100) | Persentase revenue affiliate |
+| `composition.affiliate.revenue` | number | Revenue affiliate (Rupiah) |
+| `summary` | array of strings | Summary points |
+
+**`tokopedia_data.ads_performance` fields:**
+| Field | Type | Keterangan |
+|-------|------|------------|
+| `period` | array [2] | Periode perbandingan (e.g., ["Feb 2026", "Mar 2026"]) |
+| `metrics` | array | Array of metric rows with `metric`, `prev`, `current`, `growth` |
 
 
 ### Global Performance Table (Page 7) - Dynamic Columns
@@ -406,13 +483,24 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
   "success": true,
   "message": "PDF generated successfully",
   "fileName": "Report_AMK_1770798712328.pdf",
-  "downloadUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf",
+  "downloadUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
   "requestId": "a1b2c3d4e5f6g7h8",
   "data": {
-    "pdfUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf"
+    "pdfUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
+    "pdfBase64": "<base64-encoded-pdf-string>"
   }
 }
 ```
+
+### Response Fields
+
+| Field | Type | Keterangan |
+|-------|------|------------|
+| `data.pdfBase64` | string | **PDF dalam format base64** — gunakan ini untuk download di browser. Tidak kena block ad-blocker/CORS. |
+| `data.pdfUrl` | string | URL langsung ke file PDF di server. Bisa diblock browser karena raw IP. |
+| `downloadUrl` | string | Sama dengan `data.pdfUrl` (backward compatibility). |
+
+> **PENTING**: Gunakan `data.pdfBase64` untuk download di frontend. Field `pdfUrl`/`downloadUrl` tetap tersedia sebagai fallback atau untuk akses server-to-server.
 
 ### Success with Warnings (200 OK)
 When some images fail to download, the response includes a `warnings` array:
@@ -421,13 +509,14 @@ When some images fail to download, the response includes a `warnings` array:
   "success": true,
   "message": "PDF generated successfully",
   "fileName": "Report_AMK_1770798712328.pdf",
-  "downloadUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf",
+  "downloadUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
   "requestId": "a1b2c3d4e5f6g7h8",
   "warnings": [
     "Failed to download image: https://example.com/broken-image.png"
   ],
   "data": {
-    "pdfUrl": "http://localhost:3000/output/Report_AMK_1770798712328.pdf"
+    "pdfUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
+    "pdfBase64": "<base64-encoded-pdf-string>"
   }
 }
 ```
@@ -470,6 +559,72 @@ When some images fail to download, the response includes a `warnings` array:
 
 ---
 
+## Lovable Integration
+
+### Webhook URL Configuration
+
+Lovable harus set environment variable:
+```
+REPORT_GENERATOR_WEBHOOK_URL=http://31.97.222.83:9006
+```
+
+Lovable akan otomatis append `/webhook/lovable` ke base URL tersebut:
+```
+finalWebhookUrl = REPORT_GENERATOR_WEBHOOK_URL + "/webhook/lovable"
+```
+
+### Request Headers
+```
+Content-Type: application/json
+```
+
+### Override via Body
+Lovable dapat override target URL dengan menambahkan `target_url` di request body.
+
+### Perubahan yang Diperlukan di Frontend (Lovable)
+
+Saat menerima response dari webhook, frontend harus menggunakan `data.pdfBase64` untuk membuat download link, **bukan** `data.pdfUrl` (yang bisa diblock browser karena raw IP).
+
+**Kode untuk download PDF dari base64:**
+```typescript
+// Setelah menerima response dari webhook
+const { data } = response;
+
+if (data.pdfBase64) {
+  // Decode base64 ke binary
+  const byteCharacters = atob(data.pdfBase64);
+  const byteNumbers = new Array(byteCharacters.length);
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+  const byteArray = new Uint8Array(byteNumbers);
+  const blob = new Blob([byteArray], { type: 'application/pdf' });
+
+  // Buat download link
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = response.fileName || 'report.pdf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+```
+
+**Atau untuk preview PDF di browser:**
+```typescript
+// Buat URL untuk iframe/embed
+const blob = new Blob([byteArray], { type: 'application/pdf' });
+const previewUrl = URL.createObjectURL(blob);
+// Gunakan previewUrl di <iframe src={previewUrl} /> atau window.open(previewUrl)
+```
+
+**Ringkasan perubahan frontend:**
+1. Ganti logic download yang sebelumnya pakai `pdfUrl` (direct URL) → pakai `pdfBase64` (base64 decode)
+2. Tidak perlu lagi fetch/redirect ke URL VPS untuk download
+3. Field `pdfUrl` tetap ada sebagai fallback jika `pdfBase64` kosong
+
+---
+
 ## Important Notes
 
 ### Screenshot Requirements
@@ -491,12 +646,10 @@ If these fields are missing or empty, placeholder boxes will be displayed in the
 ### Performance
 - Average generation time: 4-7 seconds
 - PDF file size: ~2-3 MB
-- Timeout: 60 seconds
+- Timeout: 120 seconds
 - Max concurrent generations: 3
 
-### Webhook Integration (Lovable)
-- Use the `/webhook/lovable` endpoint for webhook integrations
-- Supports concurrent requests (up to 3 simultaneous)
+### File Management
 - PDF files are stored in `/output` directory with timestamp-based naming
 - PDFs older than 24 hours are automatically cleaned up
 
@@ -506,20 +659,28 @@ If these fields are missing or empty, placeholder boxes will be displayed in the
 
 ### Using cURL
 ```bash
-curl -X POST http://localhost:3000/webhook/lovable \
+curl -X POST http://31.97.222.83:9006/webhook/lovable \
   -H "Content-Type: application/json" \
   -d @test_payload.json
 ```
 
 ### Using Postman
 1. Method: POST
-2. URL: `http://localhost:3000/webhook/lovable`
+2. URL: `http://31.97.222.83:9006/webhook/lovable`
 3. Headers: `Content-Type: application/json`
 4. Body: Raw JSON (paste the complete example above)
 
 ---
 
 ## Troubleshooting
+
+### Issue: Webhook Failed 404
+**Cause**: `REPORT_GENERATOR_WEBHOOK_URL` tidak di-set atau salah di Lovable
+**Solution**: Set environment variable ke `http://31.97.222.83:9006`
+
+### Issue: PDF Download Blocked by Browser (ERR_BLOCKED_BY_CLIENT)
+**Cause**: Browser/ad-blocker memblokir download dari raw IP address
+**Solution**: Gunakan `data.pdfBase64` dari response untuk membuat download link di frontend (lihat bagian Lovable Integration)
 
 ### Issue: Screenshots Not Appearing
 **Cause**: `operationalScreenshots` or `promotionScreenshots` fields are missing from request
@@ -539,5 +700,5 @@ curl -X POST http://localhost:3000/webhook/lovable \
 
 ---
 
-**Last Updated**: 2026-03-30
-**Server Status**: Running on `localhost:3000`
+**Last Updated**: 2026-04-01
+**Server Status**: Deployed on VPS `31.97.222.83:9006` (PM2: `monthly-report`)

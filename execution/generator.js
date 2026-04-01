@@ -202,13 +202,20 @@ function buildDonutChartSVG(segments, opts) {
     const cx = opts.cx || 130, cy = opts.cy || 130;
     const r = opts.r || 80, rout = opts.rout || 105;
     const w = opts.width || 260, h = opts.height || 260;
-    const total = segments.reduce((s, seg) => s + (seg.pct || 0), 0) || 1;
+
+    // Clamp percentages to 0-100 and normalize so total = 100
+    segments = segments.map(seg => ({ ...seg, pct: Math.max(0, Math.min(100, seg.pct || 0)) }));
+    const rawTotal = segments.reduce((s, seg) => s + seg.pct, 0);
+    if (rawTotal > 0 && rawTotal !== 100) {
+        segments = segments.map(seg => ({ ...seg, pct: (seg.pct / rawTotal) * 100 }));
+    }
+    const total = 100;
 
     const toRad = (deg) => (deg - 90) * Math.PI / 180;
     const px = (a, radius) => cx + radius * Math.cos(toRad(a));
     const py = (a, radius) => cy + radius * Math.sin(toRad(a));
     const arcPath = (sP, eP) => {
-        const sa = (sP / total) * 360, ea = (eP / total) * 360;
+        const sa = (sP / total) * 360, ea = Math.min((eP / total) * 360, 359.99);
         const lg = (ea - sa) > 180 ? 1 : 0;
         return `M ${px(sa, rout).toFixed(2)} ${py(sa, rout).toFixed(2)} A ${rout} ${rout} 0 ${lg} 1 ${px(ea, rout).toFixed(2)} ${py(ea, rout).toFixed(2)} L ${px(ea, r).toFixed(2)} ${py(ea, r).toFixed(2)} A ${r} ${r} 0 ${lg} 0 ${px(sa, r).toFixed(2)} ${py(sa, r).toFixed(2)} Z`;
     };
@@ -216,16 +223,28 @@ function buildDonutChartSVG(segments, opts) {
 
     let parts = [];
     let acc = 0;
-    segments.forEach(seg => {
-        if (seg.pct > 0) {
-            const s = acc, e = acc + seg.pct, mid = midAng(s, e);
-            parts.push(`<path d="${arcPath(s, e)}" fill="${seg.color}" />`);
-            const lx = px(mid, rout + 24).toFixed(1), ly1 = (py(mid, rout + 24) - 5).toFixed(1), ly2 = (py(mid, rout + 24) + 9).toFixed(1);
-            parts.push(`<text x="${lx}" y="${ly1}" text-anchor="middle" font-size="8" font-weight="700" fill="${seg.color}">${seg.label}</text>`);
-            parts.push(`<text x="${lx}" y="${ly2}" text-anchor="middle" font-size="9" font-weight="900" fill="${seg.color}">${seg.pct.toFixed(1)}%</text>`);
-        }
-        acc += seg.pct;
-    });
+    const displaySegments = segments.filter(seg => seg.pct > 0);
+
+    // If only 1 segment, render as full circle instead of arc
+    if (displaySegments.length === 1) {
+        const seg = displaySegments[0];
+        parts.push(`<circle cx="${cx}" cy="${cy}" r="${rout}" fill="${seg.color}" />`);
+        const lx = cx, ly1 = cy - rout - 18, ly2 = ly1 + 14;
+        parts.push(`<text x="${lx}" y="${ly1}" text-anchor="middle" font-size="8" font-weight="700" fill="${seg.color}">${seg.label}</text>`);
+        parts.push(`<text x="${lx}" y="${ly2}" text-anchor="middle" font-size="9" font-weight="900" fill="${seg.color}">${(opts.originalPcts && opts.originalPcts[seg.label] !== undefined ? opts.originalPcts[seg.label] : seg.pct).toFixed(1)}%</text>`);
+    } else {
+        segments.forEach(seg => {
+            if (seg.pct > 0) {
+                const s = acc, e = acc + seg.pct, mid = midAng(s, e);
+                parts.push(`<path d="${arcPath(s, e)}" fill="${seg.color}" />`);
+                const lx = px(mid, rout + 24).toFixed(1), ly1 = (py(mid, rout + 24) - 5).toFixed(1), ly2 = (py(mid, rout + 24) + 9).toFixed(1);
+                parts.push(`<text x="${lx}" y="${ly1}" text-anchor="middle" font-size="8" font-weight="700" fill="${seg.color}">${seg.label}</text>`);
+                parts.push(`<text x="${lx}" y="${ly2}" text-anchor="middle" font-size="9" font-weight="900" fill="${seg.color}">${(opts.originalPcts && opts.originalPcts[seg.label] !== undefined ? opts.originalPcts[seg.label] : seg.pct).toFixed(1)}%</text>`);
+            }
+            acc += seg.pct;
+        });
+    }
+
     // Center hole
     parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" />`);
     if (opts.centerLabel && !opts.hideCenterLabel) {
@@ -235,10 +254,10 @@ function buildDonutChartSVG(segments, opts) {
         parts.push(`<text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="16" font-weight="900" fill="${opts.centerColor || '#002B5B'}">${opts.centerValue}</text>`);
     }
 
-    return `<svg viewBox="0 0 ${w} ${h}" width="${opts.displayWidth || 210}" height="${opts.displayHeight || 210}" style="overflow:visible;">${parts.join('')}</svg>`;
+    return `<svg viewBox="0 0 ${w} ${h}" width="${opts.displayWidth || 210}" height="${opts.displayHeight || 210}">${parts.join('')}</svg>`;
 }
 
-const PUPPETEER_TIMEOUT = 60000; // 60s max for entire PDF generation
+const PUPPETEER_TIMEOUT = 120000; // 120s max for entire PDF generation
 
 async function generatePDF(data) {
     await acquireSlot();
@@ -261,6 +280,12 @@ async function generatePDF(data) {
         if (data.enabledChannels && data.enabledChannels.tiktok && !data.tiktok_data) {
             console.warn('TikTok enabled but no data provided. initializing empty structure.');
             data.tiktok_data = { store_performance: { composition: { video: { percentage: 0 }, live_streaming: { percentage: 0 }, product_card: { percentage: 0 } }, summary: [] }, gmv_max_performance: { metrics: [], period: [] } };
+        }
+
+        // Tokopedia Safety Check
+        if (data.enabledChannels && data.enabledChannels.tokopedia && !data.tokopedia_data) {
+            console.warn('Tokopedia enabled but no data provided. initializing empty structure.');
+            data.tokopedia_data = { store_performance: { total_revenue: 0, composition: { organic: { percentage: 0, revenue: 0 }, ads: { percentage: 0, revenue: 0 }, affiliate: { percentage: 0, revenue: 0 } }, summary: [] }, ads_performance: { metrics: [], period: [] } };
         }
 
         // shopeeAdsMetrics Safety Check
@@ -368,7 +393,8 @@ async function generatePDF(data) {
                 }
             }
             data.logoUrl = await imageToBase64(logoPath);
-        } else if (data.logoUrl && !data.logoUrl.startsWith('http') && !data.logoUrl.startsWith('data:')) {
+        } else if (data.logoUrl && !data.logoUrl.startsWith('data:')) {
+            // Convert both HTTP URLs and local paths to base64
             data.logoUrl = await imageToBase64(data.logoUrl);
         }
 
@@ -485,18 +511,20 @@ async function generatePDF(data) {
         // Ensure optional data objects are defined to prevent EJS ReferenceErrors
         if (typeof data.cpas_data === 'undefined') data.cpas_data = null;
         if (typeof data.tiktok_data === 'undefined') data.tiktok_data = null;
+        if (typeof data.tokopedia_data === 'undefined') data.tokopedia_data = null;
         if (!data.shopeeAdsSummary) data.shopeeAdsSummary = '';
 
         // Build SVG donut charts in JS (avoids EJS string-wrapping issues)
         const sp = (data.storePerformance && typeof data.storePerformance === 'object') ? data.storePerformance : {};
-        const adSalesPct = sp.adSales || 0;
-        const existingPct = sp.existingSales || 0;
+        // New Buyers vs Old Buyers for donut chart
+        const newBuyersPct = Math.max(0, Math.min(100, sp.newBuyers || sp.adSales || 0));
+        const oldBuyersPct = Math.max(0, Math.min(100, sp.oldBuyers || sp.existingSales || 0));
         const shopeeDonutSvg = buildDonutChartSVG(
             [
-                { pct: adSalesPct, color: templateConfig.colors.primary, label: 'NEW BUYERS' },
-                { pct: existingPct, color: templateConfig.colors.accent, label: 'OLD BUYERS' }
+                { pct: newBuyersPct, color: templateConfig.colors.primary, label: 'NEW BUYERS' },
+                { pct: oldBuyersPct, color: templateConfig.colors.accent, label: 'OLD BUYERS' }
             ],
-            { cx: 130, cy: 130, r: 80, rout: 105, width: 260, height: 260, displayWidth: 210, displayHeight: 210, centerLabel: 'AD SALES', centerValue: adSalesPct.toFixed(1) + '%', centerColor: templateConfig.colors.centerText, hideCenterLabel: templateKey === 'aurora' }
+            { cx: 150, cy: 150, r: 80, rout: 105, width: 300, height: 300, displayWidth: 240, displayHeight: 240, centerLabel: 'BUYERS', centerValue: newBuyersPct.toFixed(1) + '%', centerColor: templateConfig.colors.centerText }
         );
 
         let tiktokDonutSvg = '';
@@ -512,24 +540,39 @@ async function generatePDF(data) {
             );
         }
 
+        let tokopediaDonutSvg = '';
+        if (data.tokopedia_data && data.tokopedia_data.store_performance && data.tokopedia_data.store_performance.composition) {
+            const tkComp = data.tokopedia_data.store_performance.composition;
+            tokopediaDonutSvg = buildDonutChartSVG(
+                [
+                    { pct: tkComp.organic?.percentage || 0, color: templateConfig.colors.primary, label: 'ORGANIC' },
+                    { pct: tkComp.ads?.percentage || 0, color: templateConfig.colors.accent, label: 'ADS' },
+                    { pct: tkComp.affiliate?.percentage || 0, color: templateConfig.colors.tertiary, label: 'AFFILIATE' }
+                ],
+                { cx: 125, cy: 125, r: 75, rout: 100, width: 250, height: 250, displayWidth: 190, displayHeight: 190, centerLabel: 'KOMPOSISI', centerColor: templateConfig.colors.centerText }
+            );
+        }
+
         const html = await ejs.render(templateContent, {
             ...data,
             cssContent: cssContent,
             shopeeDonutSvg: shopeeDonutSvg,
-            tiktokDonutSvg: tiktokDonutSvg
+            tiktokDonutSvg: tiktokDonutSvg,
+            tokopediaDonutSvg: tokopediaDonutSvg
         }, { async: true });
 
         // 5. PUPPETEER RENDER
         browser = await puppeteer.launch({
-            headless: 'new',
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            executablePath: process.env.CHROME_PATH || undefined,
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
             timeout: PUPPETEER_TIMEOUT
         });
         const page = await browser.newPage();
         page.setDefaultTimeout(PUPPETEER_TIMEOUT);
         page.setDefaultNavigationTimeout(PUPPETEER_TIMEOUT);
 
-        await page.setContent(html, { waitUntil: 'networkidle0', timeout: PUPPETEER_TIMEOUT });
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: PUPPETEER_TIMEOUT });
 
         const outputDir = path.join(__dirname, '..', 'output');
         const outputPath = path.join(outputDir, `Report_${data.brandName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);

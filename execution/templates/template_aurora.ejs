@@ -415,24 +415,24 @@
             <p class="revenue-val">Rp <%= (typeof storePerformance !=='undefined' && storePerformance.totalRevenue) ? (storePerformance.totalRevenue/1000000).toFixed(1) : '0' %> M</p>
         </div>
 
-        <!-- Donut Chart -->
-        <% var _sp=(typeof storePerformance!=='undefined' && storePerformance) ? storePerformance : {adSales:0,existingSales:0,totalRevenue:0,notes:''};
-           var adSalesPercent=_sp.adSales||0;
-           var existingPercent=_sp.existingSales||0;
+        <!-- Donut Chart (New Buyers vs Old Buyers) -->
+        <% var _sp=(typeof storePerformance!=='undefined' && storePerformance) ? storePerformance : {newBuyers:0,oldBuyers:0,adSalesRevenue:0,existingRevenue:0,totalRevenue:0,notes:''};
+           var newBuyersPct=_sp.newBuyers||0;
+           var oldBuyersPct=_sp.oldBuyers||0;
            var totalRev=_sp.totalRevenue||0;
-           var adSalesRevenue=totalRev*adSalesPercent/100;
-           var existingRevenue=totalRev*existingPercent/100;
+           var adSalesRev=_sp.adSalesRevenue||0;
+           var existingRev=_sp.existingRevenue||0;
         %>
-        <div style="display:flex;justify-content:center;">
+        <div style="display:flex;justify-content:center;margin:20px 0;">
             <%- shopeeDonutSvg %>
         </div>
 
-        <!-- Comparison Table -->
+        <!-- Ad Sales vs Existing Table -->
         <table class="mini-summary-table" style="width:70%;">
             <thead><tr><th>Ad Sales</th><th>Existing</th></tr></thead>
             <tbody><tr>
-                <td>Rp<%= (adSalesRevenue/1000000).toFixed(1) %>M</td>
-                <td>Rp<%= (existingRevenue/1000000).toFixed(1) %>M</td>
+                <td>Rp<%= (adSalesRev/1000000).toFixed(1) %>M</td>
+                <td>Rp<%= (existingRev/1000000).toFixed(1) %>M</td>
             </tr></tbody>
         </table>
 
@@ -807,6 +807,103 @@
             </thead>
             <tbody>
                 <% tiktok_data.gmv_max_performance.metrics.forEach(row => { %>
+                    <tr>
+                        <td style="background:var(--primary);color:#fff;text-align:center;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:0.3px;"><%= row.metric %></td>
+                        <td><%= row.prev %></td>
+                        <td><%= row.current %></td>
+                        <td><%= row.growth %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <div class="page-footer">
+        <span><%= brandName %> | <%= reportMonth %></span>
+        <span>Page <%= nextPage() %></span>
+    </div>
+</div>
+<% } %>
+
+<!-- ============================================================
+     TOKOPEDIA SECTION (Conditional)
+     ============================================================ -->
+<% if (typeof enabledChannels !=='undefined' && enabledChannels && enabledChannels.tokopedia && typeof tokopedia_data !=='undefined' && tokopedia_data) { %>
+
+<div class="page">
+    <div class="section-divider">
+        <div class="section-divider-left">
+            <div class="section-number-bg">06</div>
+            <div class="section-number">06</div>
+        </div>
+        <div class="section-divider-right">
+            <h1 class="section-title">Tokopedia<br>Performance</h1>
+        </div>
+    </div>
+    <div class="page-footer" style="z-index:5;">
+        <span style="color:rgba(255,255,255,0.5);"><%= brandName %> | <%= reportMonth %></span>
+        <span style="color:rgba(255,255,255,0.5);">Page <%= nextPage() %></span>
+    </div>
+</div>
+
+<!-- Tokopedia Store Performance -->
+<div class="page">
+    <div class="content-header"><h2>Store Performance</h2></div>
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24mm;gap:20px;">
+        <div class="revenue-accent-box centered">
+            <p class="revenue-label">Total Revenue</p>
+            <p class="revenue-val">Rp<%= tokopedia_data.store_performance.total_revenue.toLocaleString('id-ID') %></p>
+        </div>
+
+        <% var _tkc=tokopedia_data.store_performance.composition; var tkComp=_tkc;
+           var pOrganic=_tkc.organic.percentage||0; var pAds=_tkc.ads.percentage||0; var pAffiliate=_tkc.affiliate.percentage||0; %>
+        <div style="display:flex;justify-content:center;">
+            <%- tokopediaDonutSvg %>
+        </div>
+
+        <table class="blue-header-table" style="width:85%;">
+            <thead><tr><th>Organic</th><th>Ads</th><th>Affiliate</th></tr></thead>
+            <tbody><tr>
+                <td style="font-weight:700;font-size:13px;">Rp<%= tkComp.organic.revenue.toLocaleString('id-ID') %></td>
+                <td style="font-weight:700;font-size:13px;">Rp<%= tkComp.ads.revenue.toLocaleString('id-ID') %></td>
+                <td style="font-weight:700;font-size:13px;">Rp<%= tkComp.affiliate.revenue.toLocaleString('id-ID') %></td>
+            </tr></tbody>
+        </table>
+
+        <div style="width:100%;">
+            <div class="summary-box">
+                <p class="summary-box__title">Summary</p>
+                <ul style="padding-left:16px;list-style-type:disc;margin:0;">
+                    <% tokopedia_data.store_performance.summary.forEach(point => { %>
+                        <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point %></li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="page-footer">
+        <span><%= brandName %> | <%= reportMonth %></span>
+        <span>Page <%= nextPage() %></span>
+    </div>
+</div>
+
+<!-- Tokopedia Ads Performance -->
+<div class="page">
+    <div class="content-header"><h2>Ads Performance</h2></div>
+    <div style="padding:0 24mm;">
+        <table class="blue-header-table">
+            <thead>
+                <tr>
+                    <th rowspan="2" style="width:25%;vertical-align:middle;">Metrics</th>
+                    <th colspan="2">Periode</th>
+                    <th rowspan="2" style="width:20%;vertical-align:middle;">Growth</th>
+                </tr>
+                <tr>
+                    <th><%= tokopedia_data.ads_performance.period[0] %></th>
+                    <th><%= tokopedia_data.ads_performance.period[1] %></th>
+                </tr>
+            </thead>
+            <tbody>
+                <% tokopedia_data.ads_performance.metrics.forEach(row => { %>
                     <tr>
                         <td style="background:var(--primary);color:#fff;text-align:center;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:0.3px;"><%= row.metric %></td>
                         <td><%= row.prev %></td>
