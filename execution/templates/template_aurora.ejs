@@ -221,7 +221,7 @@
            const revenueData=safeGlobalRevenue.chartData.revenueData || [];
            const adsData=safeGlobalRevenue.chartData.adsSpentData || [];
            const width=1000; const height=380;
-           const padding={ top: 50, right: 30, bottom: 40, left: 65 };
+           const padding={ top: 55, right: 30, bottom: 40, left: 75 };
            const chartWidth=width - padding.left - padding.right;
            const chartHeight=height - padding.top - padding.bottom;
            const maxRevenue=revenueData.length > 0 ? Math.max(...revenueData) : 0;
@@ -255,7 +255,7 @@
             <!-- Grid Lines -->
             <% for(let i=0; i<=5; i++) { const y=height - padding.bottom - (i * chartHeight / 5); const value=(maxValue / 5) * i; %>
                 <line x1="<%= padding.left %>" y1="<%= y %>" x2="<%= width - padding.right %>" y2="<%= y %>" stroke="#EDE5FB" stroke-width="1" />
-                <text x="<%= padding.left - 10 %>" y="<%= y + 4 %>" text-anchor="end" font-size="9" fill="#8C86A5"><%= formatCurrency(value) %></text>
+                <text x="<%= padding.left - 10 %>" y="<%= y + 4 %>" text-anchor="end" font-size="11" fill="#8C86A5"><%= formatCurrency(value) %></text>
             <% } %>
 
             <!-- Bars (Revenue) with rounded tops + gradient -->
@@ -271,7 +271,7 @@
                 const h = height - padding.bottom - y;
             %>
                 <rect x="<%= x %>" y="<%= y %>" width="<%= barWidth %>" height="<%= h %>" fill="url(#barGrad)" rx="4" opacity="0.9" />
-                <text x="<%= x + barWidth/2 %>" y="<%= y - 6 %>" text-anchor="middle" font-size="7.5" font-weight="700" fill="#6C2BD9"><%= formatFullCurrency(val) %></text>
+                <text x="<%= x + barWidth/2 %>" y="<%= y - 8 %>" text-anchor="middle" font-size="11" font-weight="700" fill="#6C2BD9"><%= formatFullCurrency(val) %></text>
             <% }) %>
 
             <!-- Line (Ads Spent) -->
@@ -283,7 +283,7 @@
                 const y = getY(val);
             %>
                 <circle cx="<%= x %>" cy="<%= y %>" r="4.5" fill="#FF6B2C" stroke="#fff" stroke-width="2" />
-                <text x="<%= x %>" y="<%= y - 12 %>" text-anchor="middle" font-size="7.5" font-weight="700" fill="#FF6B2C"><%= formatFullCurrency(val) %></text>
+                <text x="<%= x %>" y="<%= y - 14 %>" text-anchor="middle" font-size="11" font-weight="700" fill="#FF6B2C"><%= formatFullCurrency(val) %></text>
             <% }) %>
 
             <!-- X Axis Labels -->
@@ -291,7 +291,7 @@
                 const x = getBarX(i) + barWidth/2;
                 const y = height - padding.bottom + 20;
             %>
-                <text x="<%= x %>" y="<%= y %>" text-anchor="middle" font-size="9" fill="#8C86A5"><%= label %></text>
+                <text x="<%= x %>" y="<%= y %>" text-anchor="middle" font-size="11" fill="#8C86A5"><%= label %></text>
             <% }) %>
         </svg>
     </div>
