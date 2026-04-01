@@ -116,7 +116,16 @@
     <div style="padding: 14px 24mm 0;">
         <div class="summary-box">
             <p class="summary-box__title">Summary</p>
-            <p class="summary-box__text"><%= metrics.summary %></p>
+            <% var _mPoints = (metrics.summary || '').split(/(?:^|\s)(?:\d+[\.\)]\s*|- )/).filter(function(s){ return s.trim(); });
+               if (_mPoints.length > 1) { %>
+                <ul style="padding-left:16px;list-style-type:disc;margin:0;">
+                    <% _mPoints.forEach(function(point) { %>
+                        <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point.trim() %></li>
+                    <% }) %>
+                </ul>
+            <% } else { %>
+                <p class="summary-box__text"><%= metrics.summary %></p>
+            <% } %>
         </div>
     </div>
     <% } %>
@@ -300,7 +309,17 @@
     <div style="padding: 0 24mm; margin-top: -10px;">
         <div class="summary-box">
             <p class="summary-box__title">Summary</p>
-            <p class="summary-box__text"><%= safeGlobalRevenue.summary %></p>
+            <% var _gSummary = safeGlobalRevenue.summary || '';
+               var _gPoints = _gSummary.split(/(?:^|\s)(?:\d+[\.\)]\s*|- )/).filter(function(s){ return s.trim(); });
+               if (_gPoints.length > 1) { %>
+                <ul style="padding-left:16px;list-style-type:disc;margin:0;">
+                    <% _gPoints.forEach(function(point) { %>
+                        <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point.trim() %></li>
+                    <% }) %>
+                </ul>
+            <% } else { %>
+                <p class="summary-box__text"><%= _gSummary %></p>
+            <% } %>
         </div>
     </div>
 
@@ -439,9 +458,17 @@
         <!-- Notes -->
         <div style="text-align:center;max-width:85%;margin:0 auto;">
             <div class="summary-box" style="text-align:left;">
-                <p class="summary-box__text">
-                    <%= _sp.notes || "Dapat dilihat bahwa kontribusi omset terbanyak datang dari penjualan iklan." %>
-                </p>
+                <% var _spNotes = _sp.notes || "Dapat dilihat bahwa kontribusi omset terbanyak datang dari penjualan iklan.";
+                   var _spPoints = _spNotes.split(/(?:^|\s)(?:\d+[\.\)]\s*|- )/).filter(function(s){ return s.trim(); });
+                   if (_spPoints.length > 1) { %>
+                    <ul style="padding-left:16px;list-style-type:disc;margin:0;">
+                        <% _spPoints.forEach(function(point) { %>
+                            <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point.trim() %></li>
+                        <% }) %>
+                    </ul>
+                <% } else { %>
+                    <p class="summary-box__text"><%= _spNotes %></p>
+                <% } %>
             </div>
         </div>
     </div>
@@ -508,7 +535,16 @@
     <div style="padding:14px 24mm 0;">
         <div class="summary-box">
             <p class="summary-box__title">Summary</p>
-            <p class="summary-box__text"><%= shopeeAdsSummary %></p>
+            <% var _saPoints = (shopeeAdsSummary || '').split(/(?:^|\s)(?:\d+[\.\)]\s*|- )/).filter(function(s){ return s.trim(); });
+               if (_saPoints.length > 1) { %>
+                <ul style="padding-left:16px;list-style-type:disc;margin:0;">
+                    <% _saPoints.forEach(function(point) { %>
+                        <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point.trim() %></li>
+                    <% }) %>
+                </ul>
+            <% } else { %>
+                <p class="summary-box__text"><%= shopeeAdsSummary %></p>
+            <% } %>
         </div>
     </div>
     <% } %>
