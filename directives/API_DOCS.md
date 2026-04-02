@@ -250,6 +250,41 @@ Currently no API key authentication is required. Access is controlled via CORS o
       "soldPercent": "8.45%",
       "qty": 35,
       "revenue": 5425000
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Lengan Pendek KK DANISH S/S Grey",
+      "image": "https://example.com/product6.jpg",
+      "soldPercent": "5.20%",
+      "qty": 22,
+      "revenue": 3080000
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Lengan Panjang KK ZAIN L/S Olive",
+      "image": "https://example.com/product7.jpg",
+      "soldPercent": "4.10%",
+      "qty": 17,
+      "revenue": 2465000
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Printing KK AARIZ S/S Cream",
+      "image": "https://example.com/product8.jpg",
+      "soldPercent": "3.50%",
+      "qty": 15,
+      "revenue": 2100000
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Lengan Pendek KK BILAL S/S Black",
+      "image": "https://example.com/product9.jpg",
+      "soldPercent": "2.80%",
+      "qty": 12,
+      "revenue": 1680000
+    },
+    {
+      "name": "AMK Kemeja Koko Pria Premium KK IDRIS L/S Maroon",
+      "image": "https://example.com/product10.jpg",
+      "soldPercent": "2.10%",
+      "qty": 9,
+      "revenue": 1350000
     }
   ],
 
@@ -536,7 +571,7 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
   - `logoUrl` - Brand/agency logo
   - `operationalScreenshots` - Operational performance screenshots (max 2)
   - `promotionScreenshots` - Promotion tool screenshots (max 2)
-  - `topProducts[].image` - Product images (max 5 products)
+  - `topProducts[].image` - Product images (max 10 products)
   - `cpas_data.best_campaigns.nv.images` - NV campaign images (max 2)
   - `cpas_data.best_campaigns.rm.images` - RM campaign images (max 2)
 - **External URLs from Lovable are fully supported** and will be embedded in the PDF
@@ -544,8 +579,11 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
 - Failed image downloads are logged and reported in the `warnings` array of the response
 
 ### Top Products
-- Maximum 5 products will be displayed
-- If fewer than 5 products provided, remaining rows will be padded with empty cells
+- Supports up to **10 products** (default 5)
+- Products are **automatically sorted by revenue** (highest first) before rendering
+- **1-5 products**: displayed on a single page
+- **6-10 products**: split across 2 pages — "Top Products" (1-5) and "Top Products (Lanjutan)" (6-10)
+- No empty rows are rendered — only actual products are shown
 - Product images are processed and embedded as Base64
 
 ---
@@ -775,5 +813,5 @@ curl -X POST http://31.97.222.83:9006/webhook/lovable \
 
 ---
 
-**Last Updated**: 2026-04-01
+**Last Updated**: 2026-04-02
 **Server Status**: Deployed on VPS `31.97.222.83:9006` (PM2: `monthly-report`)
