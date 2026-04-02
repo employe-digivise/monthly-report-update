@@ -110,8 +110,10 @@ Currently no API key authentication is required. Access is controlled via CORS o
     "gratisOngkirXTRA": true,
     "voucherIkutiToko": true,
     "voucherTokoSaya": true,
+    "flashSaleTokoSaya": true,
     "komboHemat": true,
-    "chatBroadcast": true
+    "chatBroadcast": true,
+    "shopeeLive": true
   },
 
   "promotionScreenshots": [
