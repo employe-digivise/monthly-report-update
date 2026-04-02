@@ -555,7 +555,8 @@
     </div>
 </div>
 
-<!-- Top Products -->
+<!-- Top Products (Page 1: items 1-5) -->
+<% var _topLen = (typeof topProducts !== 'undefined' && Array.isArray(topProducts)) ? topProducts.length : 0; %>
 <div class="page">
     <div class="content-header">
         <h2>Top Products</h2>
@@ -573,7 +574,7 @@
                 </tr>
             </thead>
             <tbody>
-                <% for (let i=0; i < 5; i++) { const product=(typeof topProducts !=='undefined' && topProducts[i]) ? topProducts[i] : null; %>
+                <% for (let i=0; i < Math.min(_topLen, 5); i++) { const product=topProducts[i]; %>
                     <tr class="zebra-row">
                         <td style="text-align:center;font-weight:800;color:var(--primary);"><%= i + 1 %></td>
                         <td style="vertical-align:middle;font-size:10px;text-align:left;"><%= product ? product.name : '-' %></td>
@@ -599,6 +600,53 @@
         <span>Page <%= nextPage() %></span>
     </div>
 </div>
+
+<!-- Top Products (Page 2: items 6-10, only if more than 5) -->
+<% if (_topLen > 5) { %>
+<div class="page">
+    <div class="content-header">
+        <h2>Top Products (Lanjutan)</h2>
+    </div>
+    <div style="padding:0 24mm;">
+        <table class="action-table">
+            <thead class="table-header">
+                <tr>
+                    <th style="width:5%;text-align:center;">No</th>
+                    <th style="width:40%;text-align:left;">Produk</th>
+                    <th style="width:15%;text-align:center;">Foto</th>
+                    <th style="width:10%;text-align:center;">Proporsi</th>
+                    <th style="width:10%;text-align:center;">QTY</th>
+                    <th style="width:20%;text-align:center;">Penjualan</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% for (let i=5; i < Math.min(_topLen, 10); i++) { const product=topProducts[i]; %>
+                    <tr class="zebra-row">
+                        <td style="text-align:center;font-weight:800;color:var(--primary);"><%= i + 1 %></td>
+                        <td style="vertical-align:middle;font-size:10px;text-align:left;"><%= product ? product.name : '-' %></td>
+                        <td>
+                            <div class="product-photo-cell">
+                                <% if (product && product.image) { %>
+                                    <img src="<%= product.image %>" class="product-photo-img" alt="">
+                                <% } else { %>
+                                    <span style="color:var(--text-muted);font-size:9px;">-</span>
+                                <% } %>
+                            </div>
+                        </td>
+                        <td style="text-align:center;font-weight:600;"><%= product ? product.soldPercent : '-' %></td>
+                        <td style="text-align:center;"><%= product ? product.qty.toLocaleString() : '-' %></td>
+                        <td style="text-align:center;font-weight:700;color:var(--primary);"><%= product ? 'Rp ' + (product.revenue/1000000).toFixed(1) + 'M' : '-' %></td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+    <div class="page-footer">
+        <span><%= brandName %> | <%= reportMonth %></span>
+        <span>Page <%= nextPage() %></span>
+    </div>
+</div>
+<% } %>
 <% } %>
 
 <!-- ============================================================

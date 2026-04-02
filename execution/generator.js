@@ -375,7 +375,7 @@ async function generatePDF(data) {
 
         // Slice to 5
         data.topProducts.sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
-        data.topProducts = data.topProducts.slice(0, 5);
+        data.topProducts = data.topProducts.slice(0, 10);
 
         // Action Plan: Limit to 5 rows but DO NOT TRUNCATE TEXT
         if (data.actionPlan && Array.isArray(data.actionPlan)) {
