@@ -151,6 +151,22 @@
             <div class="dashboard-header">
                 <h2>Global Revenue</h2>
             </div>
+            {% set _rev_arr = (globalRevenue.chartData.revenueData if globalRevenue and globalRevenue.chartData and globalRevenue.chartData.revenueData else []) %}
+            {% set _ads_arr = (globalRevenue.chartData.adsSpentData if globalRevenue and globalRevenue.chartData and globalRevenue.chartData.adsSpentData else []) %}
+            {% set _lbl_arr = (globalRevenue.chartData.labels if globalRevenue and globalRevenue.chartData and globalRevenue.chartData.labels else []) %}
+            {% set _last_rev = (_rev_arr[-1] if _rev_arr|length > 0 else 0) or 0 %}
+            {% set _last_ads = (_ads_arr[-1] if _ads_arr|length > 0 else 0) or 0 %}
+            {% set _last_lbl = (_lbl_arr[-1] if _lbl_arr|length > 0 else '') %}
+            <div style="display:flex;gap:16px;padding:0 16mm 10px;justify-content:center;">
+                <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
+                    <p class="revenue-label">Revenue{% if _last_lbl %} — {{ _last_lbl }}{% endif %}</p>
+                    <p class="revenue-val">Rp {{ "%.2f"|format(_last_rev/1000000000) }}M</p>
+                </div>
+                <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
+                    <p class="revenue-label">Ads Spent{% if _last_lbl %} — {{ _last_lbl }}{% endif %}</p>
+                    <p class="revenue-val">Rp {{ "%.2f"|format(_last_ads/1000000000) }}M</p>
+                </div>
+            </div>
             <div class="chart-container" style="position: relative; height: 340px; padding: 6px 16mm;">
                 <div class="chart-legend">
                     <div class="chart-legend-item">

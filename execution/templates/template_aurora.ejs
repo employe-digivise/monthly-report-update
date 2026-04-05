@@ -211,16 +211,24 @@
         <h2>Global Revenue</h2>
     </div>
 
-    <!-- Revenue & Orders KPI -->
+    <!-- Revenue & Ads KPI: nilai bulan terakhir yang tampil di chart -->
+    <%
+        var _gr = (typeof globalRevenue !== 'undefined' && globalRevenue) ? globalRevenue : null;
+        var _revArr = (_gr && _gr.chartData && Array.isArray(_gr.chartData.revenueData)) ? _gr.chartData.revenueData : [];
+        var _adsArr = (_gr && _gr.chartData && Array.isArray(_gr.chartData.adsSpentData)) ? _gr.chartData.adsSpentData : [];
+        var _lblArr = (_gr && _gr.chartData && Array.isArray(_gr.chartData.labels)) ? _gr.chartData.labels : [];
+        var _lastRevenue = _revArr.length > 0 ? (_revArr[_revArr.length - 1] || 0) : 0;
+        var _lastAds = _adsArr.length > 0 ? (_adsArr[_adsArr.length - 1] || 0) : 0;
+        var _lastLabel = _lblArr.length > 0 ? _lblArr[_lblArr.length - 1] : '';
+    %>
     <div style="display:flex;gap:16px;padding:0 24mm 14px;justify-content:center;">
         <div class="revenue-accent-box" style="flex:1;max-width:220px;">
-            <p class="revenue-label">Total Revenue</p>
-            <p class="revenue-val" style="font-size:20px;">Rp <%= (typeof globalRevenue !=='undefined' && globalRevenue && globalRevenue.totalRevenue) ? (globalRevenue.totalRevenue/1000000000).toFixed(2) + 'M' : '0' %></p>
+            <p class="revenue-label">Revenue<%= _lastLabel ? ' — ' + _lastLabel : '' %></p>
+            <p class="revenue-val" style="font-size:20px;">Rp <%= (_lastRevenue/1000000000).toFixed(2) %>M</p>
         </div>
         <div style="flex:1;max-width:220px;background:var(--gradient-accent);border-radius:14px;padding:18px 28px;text-align:center;box-shadow:0 4px 16px rgba(255,107,44,0.2);">
-            <p style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Total Ads Spent</p>
-            <% var _totalAdsSpent = 0; if (typeof globalRevenue !== 'undefined' && globalRevenue && globalRevenue.chartData && globalRevenue.chartData.adsSpentData) { _totalAdsSpent = globalRevenue.chartData.adsSpentData.reduce(function(a,b){ return a+b; }, 0); } %>
-            <p style="font-family:'Montserrat',sans-serif;font-size:20px;font-weight:900;color:#fff;">Rp <%= (_totalAdsSpent/1000000000).toFixed(2) %>M</p>
+            <p style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Ads Spent<%= _lastLabel ? ' — ' + _lastLabel : '' %></p>
+            <p style="font-family:'Montserrat',sans-serif;font-size:20px;font-weight:900;color:#fff;">Rp <%= (_lastAds/1000000000).toFixed(2) %>M</p>
         </div>
     </div>
 

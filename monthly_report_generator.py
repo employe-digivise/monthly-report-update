@@ -170,6 +170,25 @@ async def generate_pdf(data: dict):
                 
     # Calculate Chart Data
     if 'globalRevenue' in data:
+        # Filter months where BOTH revenue and ads spent are 0 (mirrors execution/generator.js:344-374)
+        gr = data['globalRevenue']
+        if isinstance(gr, dict) and isinstance(gr.get('chartData'), dict):
+            cd = gr['chartData']
+            labels = cd.get('labels') or []
+            rev_arr = cd.get('revenueData') or []
+            ads_arr = cd.get('adsSpentData') or []
+            if isinstance(labels, list) and isinstance(rev_arr, list) and isinstance(ads_arr, list):
+                f_labels, f_rev, f_ads = [], [], []
+                for i, label in enumerate(labels):
+                    r = rev_arr[i] if i < len(rev_arr) else 0
+                    a = ads_arr[i] if i < len(ads_arr) else 0
+                    if (r or 0) > 0 or (a or 0) > 0:
+                        f_labels.append(label)
+                        f_rev.append(r or 0)
+                        f_ads.append(a or 0)
+                cd['labels'] = f_labels
+                cd['revenueData'] = f_rev
+                cd['adsSpentData'] = f_ads
         data['chart_svg_data'] = calculate_chart_data(data['globalRevenue'])
         
     # Read CSS

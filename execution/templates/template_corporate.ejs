@@ -184,6 +184,25 @@
     <div class="dashboard-header">
         <h2>Global Revenue</h2>
     </div>
+    <%
+        var _grC = (typeof globalRevenue !== 'undefined' && globalRevenue) ? globalRevenue : null;
+        var _revArrC = (_grC && _grC.chartData && Array.isArray(_grC.chartData.revenueData)) ? _grC.chartData.revenueData : [];
+        var _adsArrC = (_grC && _grC.chartData && Array.isArray(_grC.chartData.adsSpentData)) ? _grC.chartData.adsSpentData : [];
+        var _lblArrC = (_grC && _grC.chartData && Array.isArray(_grC.chartData.labels)) ? _grC.chartData.labels : [];
+        var _lastRevenueC = _revArrC.length > 0 ? (_revArrC[_revArrC.length - 1] || 0) : 0;
+        var _lastAdsC = _adsArrC.length > 0 ? (_adsArrC[_adsArrC.length - 1] || 0) : 0;
+        var _lastLabelC = _lblArrC.length > 0 ? _lblArrC[_lblArrC.length - 1] : '';
+    %>
+    <div style="display:flex;gap:16px;padding:0 24mm 14px;justify-content:center;">
+        <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
+            <p class="revenue-label">Revenue<%= _lastLabelC ? ' — ' + _lastLabelC : '' %></p>
+            <p class="revenue-val">Rp <%= (_lastRevenueC/1000000000).toFixed(2) %>M</p>
+        </div>
+        <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
+            <p class="revenue-label">Ads Spent<%= _lastLabelC ? ' — ' + _lastLabelC : '' %></p>
+            <p class="revenue-val">Rp <%= (_lastAdsC/1000000000).toFixed(2) %>M</p>
+        </div>
+    </div>
     <div style="padding: 0 24mm; position: relative; height: 350px;">
         <% const safeGlobalRevenue=(typeof globalRevenue !=='undefined' && globalRevenue) ? globalRevenue : { chartData: { labels: [], revenueData: [], adsSpentData: [] }, summary: '' };
            const chartLabels=safeGlobalRevenue.chartData.labels || [];

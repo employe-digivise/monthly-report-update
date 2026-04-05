@@ -186,6 +186,25 @@
             <div class="dashboard-header">
                 <h2>Global Revenue</h2>
             </div>
+            <%
+                var _grA = (typeof globalRevenue !== 'undefined' && globalRevenue) ? globalRevenue : null;
+                var _revArrA = (_grA && _grA.chartData && Array.isArray(_grA.chartData.revenueData)) ? _grA.chartData.revenueData : [];
+                var _adsArrA = (_grA && _grA.chartData && Array.isArray(_grA.chartData.adsSpentData)) ? _grA.chartData.adsSpentData : [];
+                var _lblArrA = (_grA && _grA.chartData && Array.isArray(_grA.chartData.labels)) ? _grA.chartData.labels : [];
+                var _lastRevenueA = _revArrA.length > 0 ? (_revArrA[_revArrA.length - 1] || 0) : 0;
+                var _lastAdsA = _adsArrA.length > 0 ? (_adsArrA[_adsArrA.length - 1] || 0) : 0;
+                var _lastLabelA = _lblArrA.length > 0 ? _lblArrA[_lblArrA.length - 1] : '';
+            %>
+            <div style="display:flex;gap:16px;padding:0 20mm 14px;justify-content:center;">
+                <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
+                    <p class="revenue-label">Revenue<%= _lastLabelA ? ' — ' + _lastLabelA : '' %></p>
+                    <p class="revenue-val">Rp <%= (_lastRevenueA/1000000000).toFixed(2) %>M</p>
+                </div>
+                <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
+                    <p class="revenue-label">Ads Spent<%= _lastLabelA ? ' — ' + _lastLabelA : '' %></p>
+                    <p class="revenue-val">Rp <%= (_lastAdsA/1000000000).toFixed(2) %>M</p>
+                </div>
+            </div>
             <div class="chart-container" style="position: relative; height: 350px; padding: 10px;">
                 <% /* Safety check for globalRevenue */ const safeGlobalRevenue=(typeof globalRevenue !=='undefined' &&
                     globalRevenue) ? globalRevenue : { chartData: { labels: [], revenueData: [], adsSpentData: [] },

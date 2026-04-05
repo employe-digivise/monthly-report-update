@@ -189,6 +189,26 @@
         <h2>Global Revenue</h2>
     </div>
 
+    <%
+        var _grD = (typeof globalRevenue !== 'undefined' && globalRevenue) ? globalRevenue : null;
+        var _revArrD = (_grD && _grD.chartData && Array.isArray(_grD.chartData.revenueData)) ? _grD.chartData.revenueData : [];
+        var _adsArrD = (_grD && _grD.chartData && Array.isArray(_grD.chartData.adsSpentData)) ? _grD.chartData.adsSpentData : [];
+        var _lblArrD = (_grD && _grD.chartData && Array.isArray(_grD.chartData.labels)) ? _grD.chartData.labels : [];
+        var _lastRevenueD = _revArrD.length > 0 ? (_revArrD[_revArrD.length - 1] || 0) : 0;
+        var _lastAdsD = _adsArrD.length > 0 ? (_adsArrD[_adsArrD.length - 1] || 0) : 0;
+        var _lastLabelD = _lblArrD.length > 0 ? _lblArrD[_lblArrD.length - 1] : '';
+    %>
+    <div style="display:flex;gap:12px;margin-bottom:10px;">
+        <div class="dash-card" style="flex:1;text-align:center;">
+            <p class="revenue-label">Revenue<%= _lastLabelD ? ' — ' + _lastLabelD : '' %></p>
+            <p class="revenue-val">Rp <%= (_lastRevenueD/1000000000).toFixed(2) %>M</p>
+        </div>
+        <div class="dash-card" style="flex:1;text-align:center;">
+            <p class="revenue-label">Ads Spent<%= _lastLabelD ? ' — ' + _lastLabelD : '' %></p>
+            <p class="revenue-val">Rp <%= (_lastAdsD/1000000000).toFixed(2) %>M</p>
+        </div>
+    </div>
+
     <!-- Chart Card -->
     <div class="dash-card" style="padding:16px 14px;">
         <% const safeGlobalRevenue=(typeof globalRevenue !=='undefined' && globalRevenue) ? globalRevenue : { chartData: { labels: [], revenueData: [], adsSpentData: [] }, summary: '' };
