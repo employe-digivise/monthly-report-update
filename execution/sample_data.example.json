@@ -1,0 +1,203 @@
+{
+    "brandName": "ACME DEMO",
+    "reportMonth": "JANUARY",
+    "reportYear": "2026",
+    "showLogo": true,
+    "logoUrl": "https://via.placeholder.com/200x80.png?text=ACME+DEMO",
+    "footerText": "SAMPLE REPORT - FOR DEMO PURPOSES ONLY",
+    "operationalScreenshots": [],
+    "promotionScreenshots": [],
+    "adsChartUrl": "",
+    "enabledChannels": {
+        "shopee": true,
+        "tiktok": true,
+        "tokopedia": false,
+        "lazada": false,
+        "blibli": false,
+        "cpas": true
+    },
+    "metrics": {
+        "unfulfilledOrders": 0.5,
+        "lateShipment": 0.8,
+        "chatResponseRate": 98.5,
+        "overallRating": 4.8,
+        "summary": "Performa toko bulan ini menunjukkan peningkatan signifikan dengan tingkat kepuasan pelanggan yang baik."
+    },
+    "promotionTools": {
+        "paketDiskon": true,
+        "gratisOngkirXTRA": true,
+        "voucherIkutiToko": true,
+        "voucherTokoSaya": true,
+        "komboHemat": true,
+        "chatBroadcast": true
+    },
+    "globalRevenue": {
+        "totalRevenue": 100000000,
+        "totalOrders": 1000,
+        "chartData": {
+            "month": "JANUARY",
+            "labels": ["Jan 25", "Feb 25", "Mar 25", "Apr 25", "May 25", "Jun 25", "Jul 25", "Aug 25", "Sep 25", "Oct 25", "Nov 25", "Dec 25", "Jan 26"],
+            "revenueData": [80000000, 82000000, 85000000, 83000000, 87000000, 90000000, 88000000, 91000000, 93000000, 95000000, 97000000, 98000000, 100000000],
+            "adsSpentData": [8000000, 8200000, 8500000, 8300000, 8700000, 9000000, 8800000, 9100000, 9300000, 9500000, 9700000, 9800000, 10000000]
+        },
+        "summary": "Revenue mengalami peningkatan 2% dibanding bulan lalu."
+    },
+    "globalPerformanceDetail": {
+        "comparisonData": [
+            {
+                "metric": "Revenue",
+                "channels": { "shopee": "Rp 80M" },
+                "thisMonth": "Rp 100M",
+                "lastMonth": "Rp 98M",
+                "growth": "+2.0%"
+            },
+            {
+                "metric": "Cost Spend",
+                "channels": { "shopee": "Rp 8M" },
+                "thisMonth": "Rp 10M",
+                "lastMonth": "Rp 9.8M",
+                "growth": "+2.0%"
+            },
+            {
+                "metric": "CIR",
+                "channels": {},
+                "thisMonth": "10.0%",
+                "lastMonth": "10.0%",
+                "growth": "0.0%"
+            },
+            {
+                "metric": "ROAS",
+                "channels": {},
+                "thisMonth": "10.00x",
+                "lastMonth": "10.00x",
+                "growth": "0.0%"
+            }
+        ],
+        "aiConclusion": [
+            "Contoh insight: tingkatkan budget iklan di minggu dengan ROAS tertinggi.",
+            "Contoh insight: fokus pada produk best seller untuk memaksimalkan efisiensi."
+        ]
+    },
+    "storePerformance": {
+        "adSales": 75.00,
+        "existingSales": 25.00,
+        "totalRevenue": 100000000,
+        "notes": "Contoh catatan: kontribusi omset terbanyak datang dari penjualan iklan."
+    },
+    "shopeeAdsMetrics": {
+        "dilihat": 1000000,
+        "ctr": "3.50%",
+        "klik": 35000,
+        "cpc": "Rp 200",
+        "penjualan": "Rp 75,000,000",
+        "biaya": "Rp 7,000,000"
+    },
+    "shopeeAdsSummary": "Contoh ringkasan performa iklan Shopee untuk demo template.",
+    "topProducts": [
+        {
+            "name": "Sample Product A - Demo Item",
+            "image": "https://via.placeholder.com/150.png?text=Product+A",
+            "soldPercent": "5.00%",
+            "qty": 500,
+            "revenue": 5000000
+        },
+        {
+            "name": "Sample Product B - Demo Item",
+            "image": "https://via.placeholder.com/150.png?text=Product+B",
+            "soldPercent": "3.00%",
+            "qty": 300,
+            "revenue": 3000000
+        },
+        {
+            "name": "Sample Product C - Demo Item",
+            "image": "https://via.placeholder.com/150.png?text=Product+C",
+            "soldPercent": "2.00%",
+            "qty": 200,
+            "revenue": 2000000
+        }
+    ],
+    "cpas_data": {
+        "period": ["December 2025", "January 2026"],
+        "awareness_nv": [
+            { "metric": "Ads Spend", "prev": "Rp1,000,000", "current": "Rp1,100,000", "growth": "10.00%" },
+            { "metric": "Impression", "prev": "100,000", "current": "110,000", "growth": "10.00%" },
+            { "metric": "Link Clicks", "prev": "2,000", "current": "2,200", "growth": "10.00%" },
+            { "metric": "CTR (%)", "prev": "2.00%", "current": "2.00%", "growth": "0.00%" },
+            { "metric": "CPC (Rp)", "prev": "Rp500", "current": "Rp500", "growth": "0.00%" }
+        ],
+        "conversion_rm": [
+            { "metric": "Ads Spend", "prev": "Rp500,000", "current": "Rp550,000", "growth": "10.00%" },
+            { "metric": "Frequency", "prev": "5.00", "current": "5.50", "growth": "10.00%" },
+            { "metric": "Revenue", "prev": "Rp2,500,000", "current": "Rp2,750,000", "growth": "10.00%" },
+            { "metric": "Transaction", "prev": "50", "current": "55", "growth": "10.00%" },
+            { "metric": "ROAS", "prev": "5.00", "current": "5.00", "growth": "0.00%" }
+        ],
+        "best_campaigns": {
+            "nv": {
+                "name": "NV | Sample Campaign",
+                "impression": "50,000",
+                "ctr": "2.00%",
+                "spend": "Rp500,000",
+                "atc": "100",
+                "c_atc": "Rp5,000",
+                "images": []
+            },
+            "rm": {
+                "name": "RM | Sample Campaign",
+                "frequency": "5.00",
+                "spend": "Rp500,000",
+                "revenue": "Rp2,500,000",
+                "qty": "50",
+                "roas": "5",
+                "images": []
+            }
+        }
+    },
+    "actionPlan": [
+        {
+            "priority": "High",
+            "problem": "Contoh problem prioritas tinggi.",
+            "solution": "Contoh solusi yang harus dijalankan segera.",
+            "pic": "Tim Operations",
+            "deadline": "2026-02-10"
+        },
+        {
+            "priority": "Medium",
+            "problem": "Contoh problem prioritas menengah.",
+            "solution": "Contoh solusi dengan A/B testing.",
+            "pic": "Tim Digital Marketing",
+            "deadline": "2026-02-15"
+        },
+        {
+            "priority": "Low",
+            "problem": "Contoh problem prioritas rendah.",
+            "solution": "Contoh solusi peningkatan internal.",
+            "pic": "Tim CS",
+            "deadline": "2026-02-20"
+        }
+    ],
+    "tiktok_data": {
+        "store_performance": {
+            "total_revenue": 20000000,
+            "composition": {
+                "video": { "revenue": 6000000, "percentage": 30.0 },
+                "live_streaming": { "revenue": 4000000, "percentage": 20.0 },
+                "product_card": { "revenue": 10000000, "percentage": 50.0 }
+            },
+            "summary": [
+                "Contoh ringkasan: komposisi penjualan didominasi kartu produk.",
+                "Contoh ringkasan: kontribusi video dari affiliate marketing.",
+                "Contoh ringkasan: live streaming memberikan kontribusi stabil."
+            ]
+        },
+        "gmv_max_performance": {
+            "period": ["December 2025", "January 2026"],
+            "metrics": [
+                { "metric": "Ads Spend", "prev": "Rp5,000,000", "current": "Rp5,500,000", "growth": "10.00%" },
+                { "metric": "Gross Revenue", "prev": "Rp50,000,000", "current": "Rp55,000,000", "growth": "10.00%" },
+                { "metric": "CIR", "prev": "10.00%", "current": "10.00%", "growth": "0.00%" },
+                { "metric": "ROAS", "prev": "10.00", "current": "10.00", "growth": "0.00%" }
+            ]
+        }
+    }
+}

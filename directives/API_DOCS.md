@@ -4,7 +4,7 @@
 
 | Environment | URL |
 |-------------|-----|
-| **Production (VPS)** | `http://31.97.222.83:9006` |
+| **Production (VPS)** | `http://<YOUR_VPS_HOST>:<PORT>` |
 | Local Development | `http://localhost:3000` |
 
 ---
@@ -598,10 +598,10 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
   "success": true,
   "message": "PDF generated successfully",
   "fileName": "Report_AMK_1770798712328.pdf",
-  "downloadUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
+  "downloadUrl": "http://<YOUR_VPS_HOST>:<PORT>/output/Report_AMK_1770798712328.pdf",
   "requestId": "a1b2c3d4e5f6g7h8",
   "data": {
-    "pdfUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
+    "pdfUrl": "http://<YOUR_VPS_HOST>:<PORT>/output/Report_AMK_1770798712328.pdf",
     "pdfBase64": "<base64-encoded-pdf-string>"
   }
 }
@@ -624,13 +624,13 @@ When some images fail to download, the response includes a `warnings` array:
   "success": true,
   "message": "PDF generated successfully",
   "fileName": "Report_AMK_1770798712328.pdf",
-  "downloadUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
+  "downloadUrl": "http://<YOUR_VPS_HOST>:<PORT>/output/Report_AMK_1770798712328.pdf",
   "requestId": "a1b2c3d4e5f6g7h8",
   "warnings": [
     "Failed to download image: https://example.com/broken-image.png"
   ],
   "data": {
-    "pdfUrl": "http://31.97.222.83:9006/output/Report_AMK_1770798712328.pdf",
+    "pdfUrl": "http://<YOUR_VPS_HOST>:<PORT>/output/Report_AMK_1770798712328.pdf",
     "pdfBase64": "<base64-encoded-pdf-string>"
   }
 }
@@ -680,7 +680,7 @@ When some images fail to download, the response includes a `warnings` array:
 
 Lovable harus set environment variable:
 ```
-REPORT_GENERATOR_WEBHOOK_URL=http://31.97.222.83:9006
+REPORT_GENERATOR_WEBHOOK_URL=http://<YOUR_VPS_HOST>:<PORT>
 ```
 
 Lovable akan otomatis append `/webhook/lovable` ke base URL tersebut:
@@ -774,14 +774,14 @@ If these fields are missing or empty, placeholder boxes will be displayed in the
 
 ### Using cURL
 ```bash
-curl -X POST http://31.97.222.83:9006/webhook/lovable \
+curl -X POST http://<YOUR_VPS_HOST>:<PORT>/webhook/lovable \
   -H "Content-Type: application/json" \
   -d @test_payload.json
 ```
 
 ### Using Postman
 1. Method: POST
-2. URL: `http://31.97.222.83:9006/webhook/lovable`
+2. URL: `http://<YOUR_VPS_HOST>:<PORT>/webhook/lovable`
 3. Headers: `Content-Type: application/json`
 4. Body: Raw JSON (paste the complete example above)
 
@@ -791,7 +791,7 @@ curl -X POST http://31.97.222.83:9006/webhook/lovable \
 
 ### Issue: Webhook Failed 404
 **Cause**: `REPORT_GENERATOR_WEBHOOK_URL` tidak di-set atau salah di Lovable
-**Solution**: Set environment variable ke `http://31.97.222.83:9006`
+**Solution**: Set environment variable ke `http://<YOUR_VPS_HOST>:<PORT>`
 
 ### Issue: PDF Download Blocked by Browser (ERR_BLOCKED_BY_CLIENT)
 **Cause**: Browser/ad-blocker memblokir download dari raw IP address
@@ -816,4 +816,4 @@ curl -X POST http://31.97.222.83:9006/webhook/lovable \
 ---
 
 **Last Updated**: 2026-04-02
-**Server Status**: Deployed on VPS `31.97.222.83:9006` (PM2: `monthly-report`)
+**Server Status**: Deployed on VPS `<YOUR_VPS_HOST>:<PORT>` (PM2: `monthly-report`)

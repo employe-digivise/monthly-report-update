@@ -40,3 +40,8 @@ project_backup.zip
 
 # Claude Code local config
 .claude/
+
+# Real brand/client data (do not commit)
+goods_a_footwear_payload.json
+execution/sample_data.json
+tunnel.url
