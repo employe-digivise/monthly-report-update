@@ -220,15 +220,21 @@
         var _lastRevenue = _revArr.length > 0 ? (_revArr[_revArr.length - 1] || 0) : 0;
         var _lastAds = _adsArr.length > 0 ? (_adsArr[_adsArr.length - 1] || 0) : 0;
         var _lastLabel = _lblArr.length > 0 ? _lblArr[_lblArr.length - 1] : '';
+        function _fmtRp(v) {
+            if (v >= 1000000000) return 'Rp ' + (v/1000000000).toFixed(2) + 'M';
+            if (v >= 1000000) return 'Rp ' + (v/1000000).toFixed(2) + 'jt';
+            if (v >= 1000) return 'Rp ' + (v/1000).toFixed(0) + 'rb';
+            return 'Rp ' + v;
+        }
     %>
     <div style="display:flex;gap:16px;padding:0 24mm 14px;justify-content:center;">
         <div class="revenue-accent-box" style="flex:1;max-width:220px;">
             <p class="revenue-label">Revenue<%= _lastLabel ? ' — ' + _lastLabel : '' %></p>
-            <p class="revenue-val" style="font-size:20px;">Rp <%= (_lastRevenue/1000000000).toFixed(2) %>M</p>
+            <p class="revenue-val" style="font-size:20px;"><%= _fmtRp(_lastRevenue) %></p>
         </div>
         <div style="flex:1;max-width:220px;background:var(--gradient-accent);border-radius:14px;padding:18px 28px;text-align:center;box-shadow:0 4px 16px rgba(255,107,44,0.2);">
             <p style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.7);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;">Ads Spent<%= _lastLabel ? ' — ' + _lastLabel : '' %></p>
-            <p style="font-family:'Montserrat',sans-serif;font-size:20px;font-weight:900;color:#fff;">Rp <%= (_lastAds/1000000000).toFixed(2) %>M</p>
+            <p style="font-family:'Montserrat',sans-serif;font-size:20px;font-weight:900;color:#fff;"><%= _fmtRp(_lastAds) %></p>
         </div>
     </div>
 

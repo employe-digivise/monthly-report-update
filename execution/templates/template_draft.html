@@ -160,11 +160,11 @@
             <div style="display:flex;gap:16px;padding:0 16mm 10px;justify-content:center;">
                 <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
                     <p class="revenue-label">Revenue{% if _last_lbl %} — {{ _last_lbl }}{% endif %}</p>
-                    <p class="revenue-val">Rp {{ "%.2f"|format(_last_rev/1000000000) }}M</p>
+                    <p class="revenue-val">{% if _last_rev >= 1000000000 %}Rp {{ "%.2f"|format(_last_rev/1000000000) }}M{% elif _last_rev >= 1000000 %}Rp {{ "%.2f"|format(_last_rev/1000000) }}jt{% elif _last_rev >= 1000 %}Rp {{ "%.0f"|format(_last_rev/1000) }}rb{% else %}Rp {{ _last_rev }}{% endif %}</p>
                 </div>
                 <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
                     <p class="revenue-label">Ads Spent{% if _last_lbl %} — {{ _last_lbl }}{% endif %}</p>
-                    <p class="revenue-val">Rp {{ "%.2f"|format(_last_ads/1000000000) }}M</p>
+                    <p class="revenue-val">{% if _last_ads >= 1000000000 %}Rp {{ "%.2f"|format(_last_ads/1000000000) }}M{% elif _last_ads >= 1000000 %}Rp {{ "%.2f"|format(_last_ads/1000000) }}jt{% elif _last_ads >= 1000 %}Rp {{ "%.0f"|format(_last_ads/1000) }}rb{% else %}Rp {{ _last_ads }}{% endif %}</p>
                 </div>
             </div>
             <div class="chart-container" style="position: relative; height: 340px; padding: 6px 16mm;">

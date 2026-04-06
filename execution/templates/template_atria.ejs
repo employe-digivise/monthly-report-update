@@ -194,15 +194,21 @@
                 var _lastRevenueA = _revArrA.length > 0 ? (_revArrA[_revArrA.length - 1] || 0) : 0;
                 var _lastAdsA = _adsArrA.length > 0 ? (_adsArrA[_adsArrA.length - 1] || 0) : 0;
                 var _lastLabelA = _lblArrA.length > 0 ? _lblArrA[_lblArrA.length - 1] : '';
+                function _fmtRpA(v) {
+                    if (v >= 1000000000) return 'Rp ' + (v/1000000000).toFixed(2) + 'M';
+                    if (v >= 1000000) return 'Rp ' + (v/1000000).toFixed(2) + 'jt';
+                    if (v >= 1000) return 'Rp ' + (v/1000).toFixed(0) + 'rb';
+                    return 'Rp ' + v;
+                }
             %>
             <div style="display:flex;gap:16px;padding:0 20mm 14px;justify-content:center;">
                 <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
                     <p class="revenue-label">Revenue<%= _lastLabelA ? ' — ' + _lastLabelA : '' %></p>
-                    <p class="revenue-val">Rp <%= (_lastRevenueA/1000000000).toFixed(2) %>M</p>
+                    <p class="revenue-val"><%= _fmtRpA(_lastRevenueA) %></p>
                 </div>
                 <div class="revenue-accent-box" style="flex:1;max-width:220px;text-align:center;">
                     <p class="revenue-label">Ads Spent<%= _lastLabelA ? ' — ' + _lastLabelA : '' %></p>
-                    <p class="revenue-val">Rp <%= (_lastAdsA/1000000000).toFixed(2) %>M</p>
+                    <p class="revenue-val"><%= _fmtRpA(_lastAdsA) %></p>
                 </div>
             </div>
             <div class="chart-container" style="position: relative; height: 350px; padding: 10px;">

@@ -197,15 +197,21 @@
         var _lastRevenueD = _revArrD.length > 0 ? (_revArrD[_revArrD.length - 1] || 0) : 0;
         var _lastAdsD = _adsArrD.length > 0 ? (_adsArrD[_adsArrD.length - 1] || 0) : 0;
         var _lastLabelD = _lblArrD.length > 0 ? _lblArrD[_lblArrD.length - 1] : '';
+        function _fmtRpD(v) {
+            if (v >= 1000000000) return 'Rp ' + (v/1000000000).toFixed(2) + 'M';
+            if (v >= 1000000) return 'Rp ' + (v/1000000).toFixed(2) + 'jt';
+            if (v >= 1000) return 'Rp ' + (v/1000).toFixed(0) + 'rb';
+            return 'Rp ' + v;
+        }
     %>
     <div style="display:flex;gap:12px;margin-bottom:10px;">
         <div class="dash-card" style="flex:1;text-align:center;">
             <p class="revenue-label">Revenue<%= _lastLabelD ? ' — ' + _lastLabelD : '' %></p>
-            <p class="revenue-val">Rp <%= (_lastRevenueD/1000000000).toFixed(2) %>M</p>
+            <p class="revenue-val"><%= _fmtRpD(_lastRevenueD) %></p>
         </div>
         <div class="dash-card" style="flex:1;text-align:center;">
             <p class="revenue-label">Ads Spent<%= _lastLabelD ? ' — ' + _lastLabelD : '' %></p>
-            <p class="revenue-val">Rp <%= (_lastAdsD/1000000000).toFixed(2) %>M</p>
+            <p class="revenue-val"><%= _fmtRpD(_lastAdsD) %></p>
         </div>
     </div>
 

@@ -18,7 +18,7 @@ import fastapi
 image = (
     Image.debian_slim()
     # Install fastapi and uvicorn explicitly
-    .pip_install("fastapi", "uvicorn", "jinja2", "playwright", "requests")
+    .pip_install("fastapi[standard]", "uvicorn", "jinja2", "playwright", "requests")
     .run_commands("playwright install-deps", "playwright install chromium")
     .add_local_dir("execution/templates", "/root/templates")
 )
@@ -251,8 +251,8 @@ async def generate_pdf(data: dict):
     
     return filename, output_path
 
-@app.function(volumes={"/root/output": volume})
-@modal.web_endpoint(method="GET")
+@app.function(image=image, volumes={"/root/output": volume})
+@modal.fastapi_endpoint(method="GET")
 def download(filename: str):
     from fastapi.responses import FileResponse, Response
     import re
@@ -279,8 +279,8 @@ def download(filename: str):
     else:
         return Response(status_code=404, content="File not found")
 
-@app.function(volumes={"/root/output": volume})
-@modal.web_endpoint(method="POST")
+@app.function(image=image, volumes={"/root/output": volume})
+@modal.fastapi_endpoint(method="POST")
 async def webhook(data: dict):
     # Trigger generation
     filename, _ = await generate_pdf.remote.aio(data)
