@@ -5,6 +5,21 @@ const path = require('path');
 const axios = require('axios');
 const { URL } = require('url');
 
+/**
+ * Coerce arbitrary chart values (string, null, "", "Rp 1.000.000") to number safely.
+ * Drafts saved by the frontend frequently send numeric fields as strings, which
+ * silently breaks the `value > 0` filter and downstream math.
+ */
+function toNum(v) {
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
+    let s = String(v).trim().replace(/Rp/gi, '').replace(/\s/g, '').replace(/,/g, '');
+    // Heuristic: multiple dots = ID-style thousand separators ("1.000.000")
+    if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
+    const n = parseFloat(s);
+    return Number.isFinite(n) ? n : 0;
+}
+
 // Template configurations
 const TEMPLATE_CONFIG = {
     default: {
@@ -341,18 +356,26 @@ async function generatePDF(data) {
             console.log('[CHART DEBUG] adsSpentData:', JSON.stringify(data.globalRevenue.chartData.adsSpentData));
         }
 
-        // Global Revenue Chart Data Filtering: Remove months where both Revenue and Ads Spent are 0
+        // Global Revenue Chart Data Filtering: Remove months where both Revenue
+        // and Ads Spent are 0 — but only if at least one non-zero entry exists.
+        // Otherwise keep the (coerced) original series so the chart still renders
+        // instead of collapsing to an empty SVG in the PDF.
         if (data.globalRevenue && data.globalRevenue.chartData) {
             const { labels, revenueData, adsSpentData } = data.globalRevenue.chartData;
 
             if (Array.isArray(labels) && Array.isArray(revenueData) && Array.isArray(adsSpentData)) {
+                // Coerce up-front so stringified payloads (e.g. "0", "1000000")
+                // don't break the `> 0` comparison or downstream math.
+                const revNum = revenueData.map(toNum);
+                const adsNum = adsSpentData.map(toNum);
+
                 const filteredLabels = [];
                 const filteredRevenue = [];
                 const filteredAds = [];
 
                 labels.forEach((label, index) => {
-                    const revenue = revenueData[index] || 0;
-                    const ads = adsSpentData[index] || 0;
+                    const revenue = revNum[index] || 0;
+                    const ads = adsNum[index] || 0;
 
                     if (revenue > 0 || ads > 0) {
                         filteredLabels.push(label);
@@ -361,15 +384,22 @@ async function generatePDF(data) {
                     }
                 });
 
-                data.globalRevenue.chartData.labels = filteredLabels;
-                data.globalRevenue.chartData.revenueData = filteredRevenue;
-                data.globalRevenue.chartData.adsSpentData = filteredAds;
+                if (filteredLabels.length > 0) {
+                    data.globalRevenue.chartData.labels = filteredLabels;
+                    data.globalRevenue.chartData.revenueData = filteredRevenue;
+                    data.globalRevenue.chartData.adsSpentData = filteredAds;
+                } else {
+                    // Fallback: every month is zero — keep coerced originals so
+                    // the chart axis & labels still render in the PDF.
+                    data.globalRevenue.chartData.revenueData = revNum;
+                    data.globalRevenue.chartData.adsSpentData = adsNum;
+                }
 
-                // DEBUG: Log filtered chart data that will be rendered
-                console.log('[CHART DEBUG] Filtered chartData for rendering:');
-                console.log('[CHART DEBUG] labels:', JSON.stringify(filteredLabels));
-                console.log('[CHART DEBUG] revenueData:', JSON.stringify(filteredRevenue));
-                console.log('[CHART DEBUG] adsSpentData:', JSON.stringify(filteredAds));
+                // DEBUG: Log chart data that will be rendered
+                console.log('[CHART DEBUG] Final chartData for rendering:');
+                console.log('[CHART DEBUG] labels:', JSON.stringify(data.globalRevenue.chartData.labels));
+                console.log('[CHART DEBUG] revenueData:', JSON.stringify(data.globalRevenue.chartData.revenueData));
+                console.log('[CHART DEBUG] adsSpentData:', JSON.stringify(data.globalRevenue.chartData.adsSpentData));
             }
         }
 

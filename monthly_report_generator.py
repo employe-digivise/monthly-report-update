@@ -56,11 +56,26 @@ async def generate_pdf(data: dict):
         return processed
 
     # 3. HELPER: Chart Logic (Replicating JS math)
+    def _to_num(v):
+        # Coerce arbitrary values (str, None, "", "Rp 1.000") to float safely
+        if v is None or v == "":
+            return 0.0
+        if isinstance(v, (int, float)):
+            return float(v)
+        try:
+            s = str(v).strip().replace("Rp", "").replace(" ", "").replace(",", "")
+            # Heuristic: if there are multiple dots, treat them as thousand separators
+            if s.count(".") > 1:
+                s = s.replace(".", "")
+            return float(s) if s else 0.0
+        except (ValueError, TypeError):
+            return 0.0
+
     def calculate_chart_data(global_revenue):
-        chart_data = global_revenue.get('chartData', {})
-        labels = chart_data.get('labels', [])
-        revenue_data = chart_data.get('revenueData', [])
-        ads_data = chart_data.get('adsSpentData', [])
+        chart_data = global_revenue.get('chartData', {}) if isinstance(global_revenue, dict) else {}
+        labels = chart_data.get('labels', []) or []
+        revenue_data = [_to_num(v) for v in (chart_data.get('revenueData', []) or [])]
+        ads_data = [_to_num(v) for v in (chart_data.get('adsSpentData', []) or [])]
 
         width = 1000
         height = 400
@@ -142,7 +157,45 @@ async def generate_pdf(data: dict):
             'x_axis': x_axis
         }
 
-    # 4. PREPARE DATA
+    # 4. PREPARE DATA — Set defaults for all critical fields
+    data.setdefault('brandName', 'Brand')
+    data.setdefault('reportMonth', 'Month')
+    data.setdefault('reportYear', '')
+    data.setdefault('showLogo', False)
+    data.setdefault('logoUrl', None)
+    data.setdefault('footerText', 'CONFIDENTIAL')
+    data.setdefault('operationalScreenshots', [])
+    data.setdefault('promotionScreenshots', [])
+    data.setdefault('metrics', {})
+    metrics_defaults = {
+        'unfulfilledOrders': '-', 'lateShipment': '-',
+        'chatResponseRate': '-', 'overallRating': '-', 'summary': ''
+    }
+    for k, v in metrics_defaults.items():
+        data['metrics'].setdefault(k, v)
+    data.setdefault('promotionTools', {})
+    data.setdefault('enabledChannels', {})
+    data.setdefault('globalRevenue', {})
+    data.setdefault('globalPerformanceDetail', {'comparisonData': [], 'aiConclusion': []})
+    if isinstance(data['globalPerformanceDetail'], dict):
+        data['globalPerformanceDetail'].setdefault('comparisonData', [])
+        data['globalPerformanceDetail'].setdefault('aiConclusion', [])
+    data.setdefault('topProducts', [])
+    data.setdefault('storePerformance', {
+        'totalRevenue': 0, 'adSales': 0, 'existingSales': 0, 'notes': ''
+    })
+    if isinstance(data['storePerformance'], dict):
+        data['storePerformance'].setdefault('totalRevenue', 0)
+        data['storePerformance'].setdefault('adSales', 0)
+        data['storePerformance'].setdefault('existingSales', 0)
+        data['storePerformance'].setdefault('notes', '')
+    data.setdefault('actionPlan', [])
+    data.setdefault('adsChartUrl', None)
+    data.setdefault('shopeeAdsMetrics', None)
+    data.setdefault('shopeeAdsSummary', '')
+    data.setdefault('cpas_data', None)
+    data.setdefault('tiktok_data', None)
+
     # Convert logo
     if data.get('logoUrl'):
         data['logoUrl'] = get_image_base64(data['logoUrl'])
@@ -169,27 +222,39 @@ async def generate_pdf(data: dict):
             bc['rm']['images'] = await process_images(bc['rm']['images'])
                 
     # Calculate Chart Data
-    if 'globalRevenue' in data:
-        # Filter months where BOTH revenue and ads spent are 0 (mirrors execution/generator.js:344-374)
-        gr = data['globalRevenue']
-        if isinstance(gr, dict) and isinstance(gr.get('chartData'), dict):
-            cd = gr['chartData']
-            labels = cd.get('labels') or []
-            rev_arr = cd.get('revenueData') or []
-            ads_arr = cd.get('adsSpentData') or []
-            if isinstance(labels, list) and isinstance(rev_arr, list) and isinstance(ads_arr, list):
-                f_labels, f_rev, f_ads = [], [], []
-                for i, label in enumerate(labels):
-                    r = rev_arr[i] if i < len(rev_arr) else 0
-                    a = ads_arr[i] if i < len(ads_arr) else 0
-                    if (r or 0) > 0 or (a or 0) > 0:
-                        f_labels.append(label)
-                        f_rev.append(r or 0)
-                        f_ads.append(a or 0)
+    # Filter months where BOTH revenue and ads spent are 0, but only if at least
+    # one non-zero entry exists — otherwise keep the original series so the chart
+    # still renders (with zeros) instead of collapsing to an empty SVG.
+    gr = data.get('globalRevenue') or {}
+    if isinstance(gr, dict) and isinstance(gr.get('chartData'), dict):
+        cd = gr['chartData']
+        labels = cd.get('labels') or []
+        rev_arr = cd.get('revenueData') or []
+        ads_arr = cd.get('adsSpentData') or []
+        if isinstance(labels, list) and isinstance(rev_arr, list) and isinstance(ads_arr, list):
+            # Coerce to numbers up-front so payloads with stringified values
+            # (e.g. "0", "1000000") don't blow up the comparison or downstream math.
+            rev_num = [_to_num(v) for v in rev_arr]
+            ads_num = [_to_num(v) for v in ads_arr]
+            f_labels, f_rev, f_ads = [], [], []
+            for i, label in enumerate(labels):
+                r = rev_num[i] if i < len(rev_num) else 0.0
+                a = ads_num[i] if i < len(ads_num) else 0.0
+                if r > 0 or a > 0:
+                    f_labels.append(label)
+                    f_rev.append(r)
+                    f_ads.append(a)
+            # Only apply the filtered series if it has data; otherwise fall back
+            # to the coerced original so the chart isn't blanked out.
+            if f_labels:
                 cd['labels'] = f_labels
                 cd['revenueData'] = f_rev
                 cd['adsSpentData'] = f_ads
-        data['chart_svg_data'] = calculate_chart_data(data['globalRevenue'])
+            else:
+                cd['revenueData'] = rev_num
+                cd['adsSpentData'] = ads_num
+    # Always set chart_svg_data (even if globalRevenue is empty) so template never crashes
+    data['chart_svg_data'] = calculate_chart_data(gr if isinstance(gr, dict) else {})
         
     # Read CSS
     with open("/root/templates/styles_atria.css", "r") as f:
@@ -282,17 +347,26 @@ def download(filename: str):
 @app.function(image=image, volumes={"/root/output": volume})
 @modal.fastapi_endpoint(method="POST")
 async def webhook(data: dict):
-    # Trigger generation
-    filename, _ = await generate_pdf.remote.aio(data)
-    
-    # Construct download URL
-    # Note: In Modal, we need to know our own URL structure.
-    # Usually it is https://<username>--<app-name>-download.modal.run/?filename=...
-    # We will return a relative hint or try to construct it if passed in headers (hard in async).
-    
-    return {
-        "success": True,
-        "message": "PDF Generated Successfully",
-        "filename": filename,
-        "download_instruction": f"Please GET the /download endpoint with ?filename={filename}"
-    }
+    from fastapi.responses import JSONResponse
+    try:
+        # Trigger generation
+        filename, _ = await generate_pdf.remote.aio(data)
+
+        return {
+            "success": True,
+            "message": "PDF Generated Successfully",
+            "filename": filename,
+            "download_instruction": f"Please GET the /download endpoint with ?filename={filename}"
+        }
+    except Exception as e:
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"[webhook] PDF generation failed: {error_detail}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "success": False,
+                "message": "PDF generation failed",
+                "error": str(e)
+            }
+        )
