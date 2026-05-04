@@ -4,6 +4,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const axios = require('axios');
 const { URL } = require('url');
+const { enrichInsightsWithAI } = require('./insight_ai');
 
 /**
  * Coerce arbitrary chart values (string, null, "", "Rp 1.000.000") to number safely.
@@ -346,6 +347,15 @@ async function generatePDF(data) {
             if (!Array.isArray(data.globalPerformanceDetail.aiConclusion)) {
                 data.globalPerformanceDetail.aiConclusion = [String(data.globalPerformanceDetail.aiConclusion)];
             }
+        }
+
+        // Auto-fill empty insight slots with Claude. Slots that already have
+        // user content (non-placeholder) are left untouched. Failures per slot
+        // are logged but do not abort the render.
+        try {
+            await enrichInsightsWithAI(data);
+        } catch (err) {
+            console.warn('[insight-ai] enrichment crashed, continuing with original data:', err.message);
         }
 
         // DEBUG: Log chart data as received from request

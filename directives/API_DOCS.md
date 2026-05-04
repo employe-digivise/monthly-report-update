@@ -69,6 +69,28 @@ Currently no API key authentication is required. Access is controlled via CORS o
 
 ---
 
+## AI-Generated Insights (Auto-fill)
+
+Insight/summary fields below are **optional** in the request body. If the field is empty (`""`, `[]`), missing, or contains a placeholder (`"test"`, `"TODO"`), the server auto-fills it using Claude (`claude-haiku-4-5`) based on the surrounding data. User-provided non-placeholder content is preserved as-is.
+
+| Field path | Type | Section |
+|---|---|---|
+| `metrics.summary` | string | Operational Performance |
+| `globalRevenue.summary` | string | Global Revenue |
+| `globalPerformanceDetail.aiConclusion` | string[] | Global Performance |
+| `storePerformance.notes` | string | Shopee Store Performance |
+| `shopeeAdsSummary` | string | Shopee Ads |
+| `tiktok_data.store_performance.summary` | string[] | TikTok Store Performance |
+
+**Env vars** (server-side):
+- `ANTHROPIC_API_KEY` — required to enable enrichment. If missing, slots stay empty (template fallbacks still apply).
+- `INSIGHT_AI_MODEL` — defaults to `claude-haiku-4-5-20251001`.
+- `INSIGHT_AI_DISABLED=1` — disables enrichment (used in tests).
+
+Failures per slot are logged but do not abort the request.
+
+---
+
 ## Request Body Structure (JSON)
 
 ### Complete Example
