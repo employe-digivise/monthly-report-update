@@ -740,6 +740,25 @@
             </tbody>
         </table>
     </div>
+
+    <% if (cpas_data && cpas_data.summary) { %>
+    <div style="padding:14px 24mm 0;">
+        <div class="summary-box">
+            <p class="summary-box__title">Summary</p>
+            <% var _cpasPoints = (cpas_data.summary || '').split(/(?:^|\s)(?:\d+[\.\)]\s*|-\s+|\n+)/).map(function(s){ return s.trim(); }).filter(Boolean);
+               if (_cpasPoints.length > 1) { %>
+                <ul style="padding-left:16px;list-style-type:disc;margin:0;">
+                    <% _cpasPoints.forEach(function(point) { %>
+                        <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point %></li>
+                    <% }) %>
+                </ul>
+            <% } else { %>
+                <p class="summary-box__text"><%= cpas_data.summary %></p>
+            <% } %>
+        </div>
+    </div>
+    <% } %>
+
     <div class="page-footer">
         <span><%= brandName %> | <%= reportMonth %></span>
         <span>Page <%= nextPage() %></span>
