@@ -366,6 +366,29 @@ async function generatePDF(data) {
             console.log('[CHART DEBUG] adsSpentData:', JSON.stringify(data.globalRevenue.chartData.adsSpentData));
         }
 
+        // Drop pre-2026 entries — all brands start tracking from January 2026.
+        // Handles label formats like "Jan 25", "January 2025", "Jan 26", etc.
+        if (data.globalRevenue && data.globalRevenue.chartData) {
+            const _cd = data.globalRevenue.chartData;
+            if (Array.isArray(_cd.labels) && Array.isArray(_cd.revenueData) && Array.isArray(_cd.adsSpentData)) {
+                const _yearOf = (label) => {
+                    const m = String(label).match(/(\d{2,4})\s*$/);
+                    if (!m) return null;
+                    const n = parseInt(m[1], 10);
+                    return n < 100 ? 2000 + n : n;
+                };
+                const _keep = _cd.labels
+                    .map((l, i) => ({ y: _yearOf(l), i }))
+                    .filter(({ y }) => y === null || y >= 2026)
+                    .map(({ i }) => i);
+                if (_keep.length && _keep.length < _cd.labels.length) {
+                    _cd.labels = _keep.map(i => _cd.labels[i]);
+                    _cd.revenueData = _keep.map(i => _cd.revenueData[i]);
+                    _cd.adsSpentData = _keep.map(i => _cd.adsSpentData[i]);
+                }
+            }
+        }
+
         // Global Revenue Chart Data Filtering: Remove months where both Revenue
         // and Ads Spent are 0 — but only if at least one non-zero entry exists.
         // Otherwise keep the (coerced) original series so the chart still renders
