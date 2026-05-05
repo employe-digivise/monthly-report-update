@@ -396,7 +396,7 @@
     <div style="padding: 14px 24mm 0;">
         <% if (typeof globalPerformanceDetail !=='undefined' && globalPerformanceDetail && globalPerformanceDetail.aiConclusion) { %>
             <div class="summary-box">
-                <p class="summary-box__title">AI-Powered Insights</p>
+                <p class="summary-box__title">Insights</p>
                 <% globalPerformanceDetail.aiConclusion.forEach((point, i) => { %>
                     <p style="font-size:10px;color:var(--text-body);line-height:1.6;margin-bottom:4px;padding-left:18px;position:relative;">
                         <span style="position:absolute;left:0;font-weight:800;color:var(--accent);"><%= i + 1 %>.</span>
@@ -1006,7 +1006,23 @@
                     <% actionPlan.forEach(plan => { %>
                         <tr class="zebra-row">
                             <td><span class="priority-badge priority-<%= plan.priority.toLowerCase() %>"><%= plan.priority %></span></td>
-                            <td style="text-align:left;"><%= plan.problem %></td>
+                            <td style="text-align:left;">
+                                <%
+                                    const _problemText = (plan.problem || '').toString();
+                                    const _problemParts = _problemText.split(/\s+-\s+/).map(s => s.trim()).filter(Boolean);
+                                %>
+                                <% if (_problemParts.length >= 3) { %>
+                                    <% const _intro = _problemParts[0]; const _items = _problemParts.slice(1); %>
+                                    <% if (_intro) { %><div style="margin-bottom:4px;"><%= _intro %></div><% } %>
+                                    <ul style="margin:0;padding-left:14px;list-style-type:disc;">
+                                        <% _items.forEach(item => { %>
+                                            <li style="margin-bottom:2px;"><%= item %></li>
+                                        <% }) %>
+                                    </ul>
+                                <% } else { %>
+                                    <%= _problemText %>
+                                <% } %>
+                            </td>
                             <td style="text-align:left;"><%= plan.solution %></td>
                             <td style="text-align:center;"><%= plan.pic %></td>
                             <td style="text-align:center;font-size:9px;"><%= plan.deadline %></td>
