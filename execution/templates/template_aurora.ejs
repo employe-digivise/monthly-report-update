@@ -871,11 +871,12 @@
     <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24mm;gap:20px;">
         <div class="revenue-accent-box centered">
             <p class="revenue-label">Total Revenue</p>
-            <p class="revenue-val">Rp<%= tiktok_data.store_performance.total_revenue.toLocaleString('id-ID') %></p>
+            <p class="revenue-val">Rp<%= Number(tiktok_data.store_performance.total_revenue || 0).toLocaleString('id-ID') %></p>
         </div>
 
-        <% var _tc=tiktok_data.store_performance.composition; var comp=_tc;
-           var pVideo=_tc.video.percentage||0; var pLive=_tc.live_streaming.percentage||0; var pCard=_tc.product_card.percentage||0; %>
+        <% var _tc=tiktok_data.store_performance.composition || {}; var comp=_tc;
+           var _v=_tc.video||{}; var _l=_tc.live_streaming||{}; var _c=_tc.product_card||{};
+           var pVideo=_v.percentage||0; var pLive=_l.percentage||0; var pCard=_c.percentage||0; %>
         <div style="display:flex;justify-content:center;">
             <%- tiktokDonutSvg %>
         </div>
@@ -883,9 +884,9 @@
         <table class="blue-header-table" style="width:85%;">
             <thead><tr><th>Video</th><th>Live Streaming</th><th>Kartu Produk</th></tr></thead>
             <tbody><tr>
-                <td style="font-weight:700;font-size:13px;">Rp<%= comp.video.revenue.toLocaleString('id-ID') %></td>
-                <td style="font-weight:700;font-size:13px;">Rp<%= comp.live_streaming.revenue.toLocaleString('id-ID') %></td>
-                <td style="font-weight:700;font-size:13px;">Rp<%= comp.product_card.revenue.toLocaleString('id-ID') %></td>
+                <td style="font-weight:700;font-size:13px;">Rp<%= Number(_v.revenue || 0).toLocaleString('id-ID') %></td>
+                <td style="font-weight:700;font-size:13px;">Rp<%= Number(_l.revenue || 0).toLocaleString('id-ID') %></td>
+                <td style="font-weight:700;font-size:13px;">Rp<%= Number(_c.revenue || 0).toLocaleString('id-ID') %></td>
             </tr></tbody>
         </table>
 
@@ -893,7 +894,7 @@
             <div class="summary-box">
                 <p class="summary-box__title">Summary</p>
                 <ul style="padding-left:16px;list-style-type:disc;margin:0;">
-                    <% tiktok_data.store_performance.summary.forEach(point => { %>
+                    <% (tiktok_data.store_performance.summary || []).forEach(point => { %>
                         <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point %></li>
                     <% }) %>
                 </ul>
@@ -918,12 +919,12 @@
                     <th rowspan="2" style="width:20%;vertical-align:middle;">Growth</th>
                 </tr>
                 <tr>
-                    <th><%= tiktok_data.gmv_max_performance.period[0] %></th>
-                    <th><%= tiktok_data.gmv_max_performance.period[1] %></th>
+                    <th><%= (tiktok_data.gmv_max_performance.period || [])[0] || '' %></th>
+                    <th><%= (tiktok_data.gmv_max_performance.period || [])[1] || '' %></th>
                 </tr>
             </thead>
             <tbody>
-                <% tiktok_data.gmv_max_performance.metrics.forEach(row => { %>
+                <% (tiktok_data.gmv_max_performance.metrics || []).forEach(row => { %>
                     <tr>
                         <td style="background:var(--primary);color:#fff;text-align:center;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:0.3px;"><%= row.metric %></td>
                         <td><%= row.prev %></td>

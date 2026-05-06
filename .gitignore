@@ -30,6 +30,10 @@ __pycache__/
 
 # Generated output
 output/*.pdf
+output/*.html
+
+# PM2 logs
+logs/
 
 # Template backups
 execution/templates/*.bak*

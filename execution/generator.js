@@ -292,16 +292,34 @@ async function generatePDF(data) {
             data.topProducts = [];
         }
 
-        // TikTok Safety Check
-        if (data.enabledChannels && data.enabledChannels.tiktok && !data.tiktok_data) {
-            console.warn('TikTok enabled but no data provided. initializing empty structure.');
-            data.tiktok_data = { store_performance: { composition: { video: { percentage: 0 }, live_streaming: { percentage: 0 }, product_card: { percentage: 0 } }, summary: [] }, gmv_max_performance: { metrics: [], period: [] } };
+        // TikTok Safety Check — defensive per-field so partial payloads
+        // (e.g. store_performance present but gmv_max_performance missing)
+        // never crash the EJS template.
+        if (data.enabledChannels && data.enabledChannels.tiktok) {
+            const td = data.tiktok_data = data.tiktok_data || {};
+            td.store_performance = td.store_performance || {};
+            td.store_performance.composition = td.store_performance.composition || {};
+            td.store_performance.composition.video = td.store_performance.composition.video || { percentage: 0, revenue: 0 };
+            td.store_performance.composition.live_streaming = td.store_performance.composition.live_streaming || { percentage: 0, revenue: 0 };
+            td.store_performance.composition.product_card = td.store_performance.composition.product_card || { percentage: 0, revenue: 0 };
+            td.store_performance.total_revenue = toNum(td.store_performance.total_revenue);
+            if (!Array.isArray(td.store_performance.summary)) td.store_performance.summary = [];
+            td.gmv_max_performance = td.gmv_max_performance || {};
+            if (!Array.isArray(td.gmv_max_performance.metrics)) td.gmv_max_performance.metrics = [];
+            if (!Array.isArray(td.gmv_max_performance.period) || td.gmv_max_performance.period.length < 2) {
+                td.gmv_max_performance.period = ['', ''];
+            }
         }
 
-        // Tokopedia Safety Check
-        if (data.enabledChannels && data.enabledChannels.tokopedia && !data.tokopedia_data) {
-            console.warn('Tokopedia enabled but no data provided. initializing empty structure.');
-            data.tokopedia_data = { total_revenue: 0, ads_performance: { metrics: [], period: [] } };
+        // Tokopedia Safety Check — defensive per-field
+        if (data.enabledChannels && data.enabledChannels.tokopedia) {
+            const tk = data.tokopedia_data = data.tokopedia_data || {};
+            tk.total_revenue = toNum(tk.total_revenue);
+            tk.ads_performance = tk.ads_performance || {};
+            if (!Array.isArray(tk.ads_performance.metrics)) tk.ads_performance.metrics = [];
+            if (!Array.isArray(tk.ads_performance.period) || tk.ads_performance.period.length < 2) {
+                tk.ads_performance.period = ['', ''];
+            }
         }
 
         // shopeeAdsMetrics Safety Check

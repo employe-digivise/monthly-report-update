@@ -12,7 +12,7 @@ Sistem generasi laporan PDF bulanan untuk brand e-commerce. Menghasilkan laporan
 | Templating | EJS |
 | HTTP Client | Axios |
 | Logging | Morgan |
-| Serverless (alt) | Modal + Playwright (Python) |
+| Deployment | VPS (Node.js + PM2 + Nginx/Reverse Proxy) |
 
 ## Struktur Project
 
@@ -35,7 +35,10 @@ Sistem generasi laporan PDF bulanan untuk brand e-commerce. Menghasilkan laporan
 │   ├── API_DOCS.md            # Referensi API lengkap
 │   └── generate_pdf_report.md # SOP generasi PDF
 ├── output/                    # Direktori output PDF
-├── monthly_report_generator.py # Versi serverless (Modal)
+├── scripts/
+│   ├── install-vps.sh         # Provisioning Node.js + Puppeteer system deps
+│   └── deploy-vps.sh          # Sync code + restart pm2 di VPS
+├── ecosystem.config.js        # PM2 process config
 ├── package.json
 └── .env                       # Environment variables
 ```
@@ -226,15 +229,32 @@ npm start
 ngrok http 3000
 ```
 
-### Modal (Serverless)
+### VPS (Production)
+
+Server berjalan sebagai service Node.js + PM2 di VPS.
+
+**Pertama kali — install Puppeteer system deps di VPS:**
 
 ```bash
-# Setup Modal
-pip install modal
-modal token set
+# Dari mesin lokal (butuh akses SSH ke VPS)
+bash scripts/install-vps.sh <ssh-host>     # contoh: root@31.97.222.83
+```
 
-# Deploy
-modal deploy monthly_report_generator.py
+Script meng-install: Node.js 20, PM2, dan semua library Chromium yang dibutuhkan
+Puppeteer (libnss3, libatk-bridge, libxkbcommon, libgbm, libasound2, fonts-noto, dll).
+
+**Deploy update code:**
+
+```bash
+bash scripts/deploy-vps.sh <ssh-host>
+```
+
+Script melakukan: `git pull` di server, `npm ci --omit=dev`, lalu `pm2 reload ecosystem.config.js`.
+
+**Health check:**
+
+```bash
+curl http://<vps-ip>:3000/health
 ```
 
 ## Performa
