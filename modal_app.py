@@ -1,0 +1,95 @@
+"""
+Modal deployment for the monthly-report PDF generator.
+
+Wraps the existing Node.js / Express / Puppeteer app in a Modal custom image
+and exposes it via `@modal.web_server` so frontend / Edge Function can hit
+https://<workspace>--monthly-report-web.modal.run/... without code rewrite.
+
+Deploy:
+    modal deploy modal_app.py
+
+Iterate locally with hot-reload:
+    modal serve modal_app.py
+"""
+import modal
+
+APP_NAME = "monthly-report"
+NODE_PORT = 3000  # what execution/server.js binds to (see PORT env below)
+
+# ---------------------------------------------------------------------------
+# Image: Debian slim + Node.js 20 + Chromium runtime libs for Puppeteer.
+# Mirrors the apt-get list from scripts/install-vps.sh.
+# ---------------------------------------------------------------------------
+image = (
+    modal.Image.debian_slim(python_version="3.12")
+    .apt_install("curl", "ca-certificates", "gnupg")
+    .run_commands(
+        "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
+        "apt-get install -y nodejs",
+    )
+    .apt_install(
+        # Fonts
+        "fonts-liberation", "fonts-noto", "fonts-noto-color-emoji",
+        # Chromium shared libs
+        "libasound2", "libatk-bridge2.0-0", "libatk1.0-0", "libatspi2.0-0",
+        "libcairo2", "libcups2", "libdbus-1-3", "libdrm2", "libexpat1",
+        "libgbm1", "libglib2.0-0", "libgtk-3-0", "libnspr4", "libnss3",
+        "libpango-1.0-0", "libpangocairo-1.0-0", "libx11-6", "libx11-xcb1",
+        "libxcb1", "libxcomposite1", "libxdamage1", "libxext6", "libxfixes3",
+        "libxkbcommon0", "libxrandr2", "libxshmfence1", "libxss1", "libxtst6",
+        "wget", "xdg-utils",
+    )
+    # Copy package manifests first → maximize Docker layer cache for npm ci
+    .add_local_file("package.json", "/app/package.json", copy=True)
+    .add_local_file("package-lock.json", "/app/package-lock.json", copy=True)
+    .workdir("/app")
+    .run_commands(
+        # Puppeteer downloads Chromium during npm ci; cache it inside the image
+        "npm ci --omit=dev",
+    )
+    .env({
+        "NODE_ENV": "production",
+        "PORT": str(NODE_PORT),
+        # Bind to all interfaces so Modal's web_server proxy can reach it
+        "HOST": "0.0.0.0",
+    })
+    # Add the rest of the app *after* deps so code changes don't bust the
+    # npm-ci layer.
+    .add_local_dir(
+        "execution",
+        "/app/execution",
+        copy=True,
+    )
+    .add_local_dir(
+        "directives",
+        "/app/directives",
+        copy=True,
+        ignore=["*.bak*", "*.backup"],
+    )
+)
+
+app = modal.App(APP_NAME, image=image)
+
+# ---------------------------------------------------------------------------
+# Web server: spawn `node execution/server.js` and let Modal proxy NODE_PORT.
+# ---------------------------------------------------------------------------
+@app.function(
+    secrets=[
+        # Existing secret in the workspace. Must export ANTHROPIC_API_KEY.
+        modal.Secret.from_name("anthropic-api-key"),
+    ],
+    cpu=2.0,
+    memory=2048,
+    timeout=300,           # generous: PDF gen ~5-10s, plus image pulls
+    min_containers=1,      # keep 1 warm → eliminate cold-start for first request
+    max_containers=5,      # cap fan-out so we don't surprise-bill
+    scaledown_window=300,  # 5 min idle before scale to zero (beyond the warm one)
+)
+@modal.concurrent(max_inputs=3)  # matches MAX_CONCURRENT in generator.js
+@modal.web_server(port=NODE_PORT, startup_timeout=60)
+def web():
+    import subprocess
+    subprocess.Popen(
+        ["node", "execution/server.js"],
+        cwd="/app",
+    )

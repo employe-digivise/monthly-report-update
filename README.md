@@ -12,7 +12,7 @@ Sistem generasi laporan PDF bulanan untuk brand e-commerce. Menghasilkan laporan
 | Templating | EJS |
 | HTTP Client | Axios |
 | Logging | Morgan |
-| Deployment | VPS (Node.js + PM2 + Nginx/Reverse Proxy) |
+| Deployment | Modal (serverless, custom Node container) |
 
 ## Struktur Project
 
@@ -34,13 +34,11 @@ Sistem generasi laporan PDF bulanan untuk brand e-commerce. Menghasilkan laporan
 ├── directives/
 │   ├── API_DOCS.md            # Referensi API lengkap
 │   └── generate_pdf_report.md # SOP generasi PDF
-├── output/                    # Direktori output PDF
-├── scripts/
-│   ├── install-vps.sh         # Provisioning Node.js + Puppeteer system deps
-│   └── deploy-vps.sh          # Sync code + restart pm2 di VPS
-├── ecosystem.config.js        # PM2 process config
+├── output/                    # Direktori output PDF (lokal saja)
+├── modal_app.py               # Modal deployment (Node container + web_server)
+├── .modalignore               # File yang dikecualikan dari Modal upload
 ├── package.json
-└── .env                       # Environment variables
+└── .env                       # Environment variables (lokal saja)
 ```
 
 ## Arsitektur
@@ -229,32 +227,57 @@ npm start
 ngrok http 3000
 ```
 
-### VPS (Production)
+### Modal (Production)
 
-Server berjalan sebagai service Node.js + PM2 di VPS.
+Sistem berjalan sebagai Modal Function dengan custom Node.js container yang
+membungkus `execution/server.js`. Tujuannya: lepas Puppeteer dari VPS shared
+(masalah resource bentrok dengan project lain) dan dapat auto-scale.
 
-**Pertama kali — install Puppeteer system deps di VPS:**
-
-```bash
-# Dari mesin lokal (butuh akses SSH ke VPS)
-bash scripts/install-vps.sh <ssh-host>     # contoh: root@31.97.222.83
-```
-
-Script meng-install: Node.js 20, PM2, dan semua library Chromium yang dibutuhkan
-Puppeteer (libnss3, libatk-bridge, libxkbcommon, libgbm, libasound2, fonts-noto, dll).
-
-**Deploy update code:**
+**Prasyarat satu kali:**
 
 ```bash
-bash scripts/deploy-vps.sh <ssh-host>
+# Install Modal CLI
+pip install modal
+
+# Authenticate
+modal token new
+
+# Pastikan secret `anthropic-api-key` sudah ada di workspace Modal
+# (export var: ANTHROPIC_API_KEY). Buat lewat dashboard atau:
+modal secret create anthropic-api-key ANTHROPIC_API_KEY=sk-ant-xxx
 ```
 
-Script melakukan: `git pull` di server, `npm ci --omit=dev`, lalu `pm2 reload ecosystem.config.js`.
+**Deploy:**
+
+```bash
+modal deploy modal_app.py
+```
+
+Setelah deploy, Modal akan print public URL:
+`https://<workspace>--monthly-report-web.modal.run`
+
+**Edge Function frontend** harus diupdate ke URL itu:
+
+```
+POST https://<workspace>--monthly-report-web.modal.run/webhook/lovable
+```
+
+**Iterasi lokal (hot-reload):**
+
+```bash
+modal serve modal_app.py
+```
+
+**Konfigurasi container** (lihat `modal_app.py`):
+- 2 vCPU, 2 GB memory
+- `min_containers=1` — satu container always-warm, hilangkan cold start
+- `max_containers=5` — cap fan-out
+- `max_inputs=3` — match `MAX_CONCURRENT` di generator.js
 
 **Health check:**
 
 ```bash
-curl http://<vps-ip>:3000/health
+curl https://<workspace>--monthly-report-web.modal.run/health
 ```
 
 ## Performa

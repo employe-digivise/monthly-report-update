@@ -1,0 +1,30 @@
+# Mirror .gitignore — keep Modal upload payload lean.
+.git/
+.env
+.env.local
+.env.production
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+Icon?
+.tmp/
+.claude/
+ngrok
+*.log
+output/
+project_backup.zip
+goods_a_footwear_payload.json
+execution/sample_data.json
+execution/templates/*.bak*
+execution/templates/*.backup
+scripts/
+ecosystem.config.js
+tunnel.url
+
+# Test fixtures
+test_payload*.json
+curl_response*.json
+test_fixes.json
+final_test.json
