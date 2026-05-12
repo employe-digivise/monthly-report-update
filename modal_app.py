@@ -52,6 +52,9 @@ image = (
         "PORT": str(NODE_PORT),
         # Bind to all interfaces so Modal's web_server proxy can reach it
         "HOST": "0.0.0.0",
+        # Insight auto-fill (Claude Haiku) disabled in this deploy.
+        # Switch to "0" + attach `anthropic-api-key` secret to enable.
+        "INSIGHT_AI_DISABLED": "1",
     })
     # Add the rest of the app *after* deps so code changes don't bust the
     # npm-ci layer.
@@ -74,10 +77,12 @@ app = modal.App(APP_NAME, image=image)
 # Web server: spawn `node execution/server.js` and let Modal proxy NODE_PORT.
 # ---------------------------------------------------------------------------
 @app.function(
-    secrets=[
-        # Existing secret in the workspace. Must export ANTHROPIC_API_KEY.
-        modal.Secret.from_name("anthropic-api-key"),
-    ],
+    # No secrets attached — INSIGHT_AI_DISABLED=1 in image env, so
+    # insight_ai.js short-circuits before touching ANTHROPIC_API_KEY.
+    # To enable Claude auto-fill later:
+    #   1) modal secret create anthropic-api-key ANTHROPIC_API_KEY=sk-ant-...
+    #   2) add `secrets=[modal.Secret.from_name("anthropic-api-key")]` here
+    #   3) flip INSIGHT_AI_DISABLED to "0" in the .env({...}) block above
     cpu=2.0,
     memory=2048,
     timeout=300,           # generous: PDF gen ~5-10s, plus image pulls
