@@ -69,10 +69,17 @@ chart, halaman donut), semuanya faithful:
    Di-download ulang dari fontsource (`inter-latin-900-normal`, 21 KB woff2 valid);
    diverifikasi `Inter-Black` kini ter-embed di PDF Puppeteer.
 
-**Adoption-readiness sudah disiapkan:** `scripts/install-vps.sh` dan `modal_app.py`
-kini meng-install WeasyPrint + lib pendukung (gdk-pixbuf/ffi/harfbuzz/pangoft2) di
-image Linux. Default tetap `PDF_ENGINE=puppeteer`; tinggal set `PDF_ENGINE=weasyprint`
-(dan `WEASYPRINT_BIN=/opt/weasyprint-venv/bin/weasyprint` di VPS) untuk mengaktifkan.
+3. **Bug font Montserrat — SUDAH DIPERBAIKI.** `Montserrat-SemiBold/Bold/Black.woff2`
+   ternyata subset rusak (semua tepat 21288 byte) yang **gagal di-load WeasyPrint** (silent,
+   tanpa warning) → weight 600/700/900 Montserrat fallback ke Noto, termasuk judul cover
+   "MONTHLY REPORT" (Montserrat Black). Diganti dengan file fontsource bersih. Diverifikasi
+   di Modal (Linux): semua 8 weight Inter+Montserrat ter-embed; judul cover kini Montserrat
+   Black asli. (Noto tetap muncul sebagai jaring pengaman per-glyph untuk simbol langka — normal.)
+
+**STATUS: WeasyPrint kini DEFAULT di Modal.** `modal_app.py` set `PDF_ENGINE=weasyprint`
+(diverifikasi live). `install-vps.sh` + `modal_app.py` meng-install WeasyPrint + lib
+pendukung. Fallback ke Chromium: set `PDF_ENGINE=puppeteer`
+(di VPS juga `WEASYPRINT_BIN=/opt/weasyprint-venv/bin/weasyprint`).
 
 **pdfmake — chart bisa, layout harus ditulis ulang.** Spike (`scripts/spike-pdfmake.js`)
 membuktikan node `svg` pdfmake **berhasil** render donut DAN bar gradient kita

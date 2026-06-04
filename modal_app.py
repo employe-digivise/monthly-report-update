@@ -65,6 +65,10 @@ image = (
         # Insight auto-fill (Claude Haiku) disabled in this deploy.
         # Switch to "0" + attach `anthropic-api-key` secret to enable.
         "INSIGHT_AI_DISABLED": "1",
+        # PDF engine: WeasyPrint (~-75% RAM vs Chromium). Verified on Linux/Modal —
+        # fonts (Inter/Montserrat incl. Black), charts, gradients render correctly.
+        # Fall back to puppeteer by setting this to "puppeteer".
+        "PDF_ENGINE": "weasyprint",
     })
     # Add the rest of the app *after* deps so code changes don't bust the
     # npm-ci layer.
