@@ -23,14 +23,8 @@ Sistem generasi laporan PDF bulanan untuk brand e-commerce. Menghasilkan laporan
 │   ├── sample_data.json       # Contoh payload untuk testing
 │   ├── assets/                # Logo & font files
 │   └── templates/
-│       ├── template_aurora.ejs     # Template Aurora — DEFAULT (tema ungu & oranye)
-│       ├── template_atria.ejs      # Template Atria (tema biru)
-│       ├── template_corporate.ejs  # Template Corporate (tema ungu)
-│       ├── template_dashboard.ejs  # Template Dashboard (tema abu-abu)
-│       ├── styles_aurora.css       # Styling Aurora — DEFAULT
-│       ├── styles_atria.css        # Styling Atria
-│       ├── styles_corporate.css    # Styling Corporate
-│       └── styles_dashboard.css    # Styling Dashboard
+│       ├── template_aurora.ejs     # Template Aurora — satu-satunya template (tema ungu & oranye)
+│       └── styles_aurora.css       # Styling Aurora
 ├── directives/
 │   ├── API_DOCS.md            # Referensi API lengkap
 │   └── generate_pdf_report.md # SOP generasi PDF
@@ -105,7 +99,7 @@ Endpoint alternatif (fungsi sama).
 
 | Field | Tipe | Deskripsi |
 |-------|------|-----------|
-| `template` | string | `"aurora"` (default), `"default"`, `"corporate"`, `"dashboard"` |
+| `template` | string | Hanya `"aurora"` yang didukung (nilai lain otomatis jadi aurora) |
 | `logoUrl` | string | URL logo brand |
 | `enabledChannels` | object | Channel aktif: `{ shopee, tiktok, tokopedia, lazada, blibli, cpas }` |
 | `metrics` | object | Metrik performa (revenue, orders, visitors, dll.) |
@@ -169,28 +163,14 @@ curl -X POST http://localhost:3000/webhook/lovable \
 
 ## Template
 
-### Aurora (Default)
+### Aurora
 - Tema warna ungu & oranye
 - Desain modern dan kreatif dengan aurora gradient cover
 - Section divider split layout, KPI cards gradient border
 - Cocok untuk presentasi klien premium
 
-### Default (Atria)
-- Tema warna biru
-- Layout modern dengan gradien
-- Cocok untuk presentasi klien
-
-### Corporate
-- Tema warna ungu
-- Desain formal dan terstruktur
-- Cocok untuk laporan internal perusahaan
-
-### Dashboard
-- Tema warna abu-abu
-- Card-based layout
-- Cocok untuk reporting analitik
-
-Pilih template via field `template` pada request (`"aurora"`, `"default"`, `"corporate"`, `"dashboard"`).
+Aurora adalah satu-satunya template. Field `template` pada request bersifat opsional —
+nilai apa pun (termasuk legacy `"corporate"`/`"default"`/`"dashboard"`) otomatis dirender sebagai aurora.
 
 ## Fitur Teknis
 

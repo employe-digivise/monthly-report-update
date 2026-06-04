@@ -1,4 +1,3 @@
-const puppeteer = require('puppeteer');
 const ejs = require('ejs');
 const fs = require('fs-extra');
 const path = require('path');
@@ -21,38 +20,9 @@ function toNum(v) {
     return Number.isFinite(n) ? n : 0;
 }
 
-// Template configurations
+// Template configuration — aurora is the only supported template.
+// (corporate/atria/dashboard removed; any other `template` value falls back to aurora.)
 const TEMPLATE_CONFIG = {
-    default: {
-        css: 'styles_atria.css',
-        ejs: 'template_atria.ejs',
-        colors: {
-            primary: '#002B5B',
-            accent: '#F59E0B',
-            tertiary: '#10B981',
-            centerText: '#002B5B'
-        }
-    },
-    corporate: {
-        css: 'styles_corporate.css',
-        ejs: 'template_corporate.ejs',
-        colors: {
-            primary: '#6B21A8',
-            accent: '#EA580C',
-            tertiary: '#7C3AED',
-            centerText: '#6B21A8'
-        }
-    },
-    dashboard: {
-        css: 'styles_dashboard.css',
-        ejs: 'template_dashboard.ejs',
-        colors: {
-            primary: '#002B5B',
-            accent: '#F59E0B',
-            tertiary: '#10B981',
-            centerText: '#002B5B'
-        }
-    },
     aurora: {
         css: 'styles_aurora.css',
         ejs: 'template_aurora.ejs',
@@ -273,19 +243,20 @@ function buildDonutChartSVG(segments, opts) {
     return `<svg viewBox="0 0 ${w} ${h}" width="${opts.displayWidth || 210}" height="${opts.displayHeight || 210}">${parts.join('')}</svg>`;
 }
 
-const PUPPETEER_TIMEOUT = 120000; // 120s max for entire PDF generation
-
-async function generatePDF(data) {
-    await acquireSlot();
+/**
+ * Phase 1 of PDF generation: engine-agnostic preprocessing.
+ * Normalizes the payload, embeds images/fonts as base64, builds SVG charts,
+ * and renders the static HTML. Returns a render context consumed by a renderer.
+ */
+async function buildRenderContext(data) {
     _currentWarnings = []; // Reset warnings for this generation
 
     // Resolve template configuration
     const templateKey = (data.template && TEMPLATE_CONFIG[data.template]) ? data.template : 'aurora';
     const templateConfig = TEMPLATE_CONFIG[templateKey];
     console.log(`Using template: ${templateKey}`);
-    let browser = null;
     try {
-        console.log(`Starting PDF generation... (active: ${activeGenerations}/${MAX_CONCURRENT})`);
+        console.log(`Preparing render context... (active: ${activeGenerations}/${MAX_CONCURRENT})`);
 
         // 1. DATA SLICING & SAFETY CHECKS
         if (!data.topProducts || !Array.isArray(data.topProducts)) {
@@ -643,46 +614,52 @@ async function generatePDF(data) {
             tiktokDonutSvg: tiktokDonutSvg
         }, { async: true });
 
-        // 5. PUPPETEER RENDER
-        browser = await puppeteer.launch({
-            executablePath: process.env.CHROME_PATH || undefined,
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu'],
-            timeout: PUPPETEER_TIMEOUT
-        });
-        const page = await browser.newPage();
-        page.setDefaultTimeout(PUPPETEER_TIMEOUT);
-        page.setDefaultNavigationTimeout(PUPPETEER_TIMEOUT);
-
-        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: PUPPETEER_TIMEOUT });
-
+        // Compute the output path; the selected renderer writes the PDF here.
         const outputDir = path.join(__dirname, '..', 'output');
-        const outputPath = path.join(outputDir, `Report_${data.brandName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
         await fs.ensureDir(outputDir);
+        const outputPath = path.join(outputDir, `Report_${data.brandName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
 
-        await page.pdf({
-            path: outputPath,
-            format: 'A4',
-            printBackground: true,
-            timeout: PUPPETEER_TIMEOUT,
-            margin: {
-                top: '0mm',
-                right: '0mm',
-                bottom: '0mm',
-                left: '0mm'
-            }
-        });
-
-        console.log(`PDF Generated Successfully: ${outputPath}`);
-        return { pdfPath: outputPath, warnings: [..._currentWarnings] };
+        // Engine-agnostic render context.
+        //  - puppeteer / weasyprint consume `html` (fully static, self-contained).
+        //  - pdfmake ignores `html` and builds from `data` + `charts`.
+        return {
+            data,
+            html,
+            cssContent,
+            templateConfig,
+            charts: { shopeeDonutSvg, tiktokDonutSvg },
+            warnings: [..._currentWarnings],
+            outputPath
+        };
 
     } catch (error) {
-        console.error('Error in PDF generation:', error);
+        console.error('Error building render context:', error);
         throw error;
+    }
+}
+
+// Selectable PDF engine: puppeteer (default) | weasyprint | pdfmake.
+// Renderers are lazy-required so only the chosen engine's deps load (keeps RAM benchmarks fair).
+const PDF_ENGINE = (process.env.PDF_ENGINE || 'puppeteer').toLowerCase();
+const RENDERERS = {
+    puppeteer: () => require('./renderers/puppeteer'),
+    weasyprint: () => require('./renderers/weasyprint'),
+    pdfmake: () => require('./renderers/pdfmake')
+};
+
+/**
+ * Phase 2: acquire a concurrency slot, build the render context, then hand it
+ * to the selected renderer. Return contract is unchanged: { pdfPath, warnings }.
+ */
+async function generatePDF(data) {
+    await acquireSlot();
+    try {
+        const ctx = await buildRenderContext(data);
+        const load = RENDERERS[PDF_ENGINE] || RENDERERS.puppeteer;
+        const renderer = load();
+        console.log(`Rendering with engine: ${renderer.name}`);
+        return await renderer.render(ctx, ctx.outputPath);
     } finally {
-        if (browser) {
-            await browser.close().catch(err => console.error('Browser close error:', err.message));
-        }
         releaseSlot();
     }
 }
@@ -696,4 +673,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { generatePDF };
+module.exports = { generatePDF, buildRenderContext, PDF_ENGINE };

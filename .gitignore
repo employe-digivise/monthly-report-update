@@ -32,6 +32,9 @@ __pycache__/
 output/*.pdf
 output/*.html
 
+# Renderer benchmark artifacts
+bench-output/
+
 # PM2 logs
 logs/
 

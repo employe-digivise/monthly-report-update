@@ -49,6 +49,20 @@ apt-get install -y \
        libxdamage1 libxext6 libxfixes3 libxkbcommon0 libxrandr2 \
        libxshmfence1 libxss1 libxtst6 wget xdg-utils
 
+echo "==> Install WeasyPrint (optional PDF engine: PDF_ENGINE=weasyprint)"
+# Lighter alternative to Puppeteer (~-75% RAM). The report embeds Inter/Montserrat
+# via @font-face data-URIs which WeasyPrint loads natively on Linux, so no extra
+# font files are required here (libpango/libcairo already installed above for Chromium).
+apt-get install -y python3 python3-pip python3-venv \
+  libgdk-pixbuf-2.0-0 libffi8 libharfbuzz0b fonts-dejavu-core \
+  || apt-get install -y python3 python3-pip python3-venv libgdk-pixbuf2.0-0 libffi7 libharfbuzz0b fonts-dejavu-core || true
+# Install into a dedicated venv so it never clashes with system Python.
+python3 -m venv /opt/weasyprint-venv 2>/dev/null || true
+/opt/weasyprint-venv/bin/pip install --quiet --upgrade pip weasyprint brotli || true
+# Expose for the app: set WEASYPRINT_BIN=/opt/weasyprint-venv/bin/weasyprint and PDF_ENGINE=weasyprint
+ln -sf /opt/weasyprint-venv/bin/weasyprint /usr/local/bin/weasyprint 2>/dev/null || true
+/opt/weasyprint-venv/bin/weasyprint --info >/dev/null 2>&1 && echo "   weasyprint OK" || echo "   weasyprint install skipped/failed (puppeteer still default)"
+
 echo "==> Install pm2 globally"
 npm install -g pm2
 

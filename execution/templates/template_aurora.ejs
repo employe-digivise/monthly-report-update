@@ -283,7 +283,10 @@
 
             <!-- Bars (Revenue) with rounded tops + gradient -->
             <defs>
-                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                <!-- userSpaceOnUse (not objectBoundingBox): WeasyPrint's SVG renderer
+                     does not support objectBoundingBox gradients, so the bars would
+                     render invisible. Explicit plot-area coords work in both engines. -->
+                <linearGradient id="barGrad" x1="0" y1="<%= padding.top %>" x2="0" y2="<%= height - padding.bottom %>" gradientUnits="userSpaceOnUse">
                     <stop offset="0%" stop-color="#A855F7" />
                     <stop offset="100%" stop-color="#6C2BD9" />
                 </linearGradient>

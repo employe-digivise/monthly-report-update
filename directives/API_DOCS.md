@@ -442,11 +442,8 @@ Failures per slot are logged but do not abort the request.
 - `reportYear` (string/number): Year between 2020-2030 (e.g., "2026")
 
 ### Template Selection
-- `template` (string, optional): Report visual style
-  - `"aurora"` - Aurora template (purple & orange theme) — **default if omitted**
-  - `"default"` - Atria template (blue theme)
-  - `"corporate"` - Corporate template (purple theme)
-  - `"dashboard"` - Dashboard template (card-based gray theme)
+- `template` (string, optional): Report visual style. Only `"aurora"` is supported.
+  Any value (or omitting the field) renders the **Aurora** template (purple & orange theme).
 
 ### Optional Fields (with Fallbacks)
 - `showLogo` (boolean): Whether to show agency logo. Default: `true`
@@ -504,11 +501,8 @@ The donut chart visualizes **New Buyers vs Old Buyers** ratio.
 
 > Persentase `newBuyers`/`oldBuyers` di-clamp ke 0-100 dan dinormalisasi agar total = 100%.
 
-**Color Scheme (varies by template):**
-- **Aurora**: Primary `#6C2BD9`, Accent `#FF6B2C`, Tertiary `#A855F7` *(default)*
-- **Default**: Primary `#002B5B`, Accent `#F59E0B`, Tertiary `#10B981`
-- **Corporate**: Primary `#6B21A8`, Accent `#EA580C`, Tertiary `#7C3AED`
-- **Dashboard**: Primary `#002B5B`, Accent `#F59E0B`, Tertiary `#10B981`
+**Color Scheme (Aurora):**
+- **Aurora**: Primary `#6C2BD9`, Accent `#FF6B2C`, Tertiary `#A855F7`
 
 ### Pie Chart (Page 16) — TikTok Store Performance
 The TikTok donut chart shows Video / Live Streaming / Product Card composition.

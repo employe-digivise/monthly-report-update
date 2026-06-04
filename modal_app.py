@@ -39,6 +39,16 @@ image = (
         "libxkbcommon0", "libxrandr2", "libxshmfence1", "libxss1", "libxtst6",
         "wget", "xdg-utils",
     )
+    # WeasyPrint (optional PDF engine: PDF_ENGINE=weasyprint, ~-75% RAM vs Chromium).
+    # pango/cairo already present above; add gdk-pixbuf/ffi/harfbuzz/pangoft2 + the lib.
+    # Report fonts are embedded via @font-face data-URIs (WeasyPrint loads them on Linux),
+    # so no extra font files are needed.
+    .apt_install(
+        "libgdk-pixbuf-2.0-0", "libffi8", "libharfbuzz0b", "libpangoft2-1.0-0",
+    )
+    # Non-fatal: a WeasyPrint install hiccup must never break the puppeteer (default)
+    # deploy. If it fails, PDF_ENGINE=weasyprint won't work but puppeteer is unaffected.
+    .run_commands("python -m pip install weasyprint brotli || echo 'WARN: weasyprint install skipped'")
     # Copy package manifests first → maximize Docker layer cache for npm ci
     .add_local_file("package.json", "/app/package.json", copy=True)
     .add_local_file("package-lock.json", "/app/package-lock.json", copy=True)

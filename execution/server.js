@@ -218,16 +218,9 @@ async function handleReportGeneration(req, res) {
             data.metrics = sanitizeMetrics(data.metrics);
         }
 
-        // Validate template parameter
-        const validTemplates = ['default', 'corporate', 'dashboard', 'aurora'];
-        if (data.template && !validTemplates.includes(data.template)) {
-            return res.status(400).json({
-                success: false,
-                message: `Invalid template: "${data.template}". Valid options: ${validTemplates.map(t => `"${t}"`).join(', ')}.`,
-                requestId: reqId
-            });
-        }
-        if (!data.template) data.template = 'aurora';
+        // Template is fixed to 'aurora' (the only supported template).
+        // Any incoming `template` value (incl. legacy corporate/atria/dashboard) is coerced to aurora.
+        data.template = 'aurora';
 
         console.log(`[${reqId}] Received request for brand: ${data.brandName}`);
 
