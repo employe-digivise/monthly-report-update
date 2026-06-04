@@ -17,6 +17,7 @@
     --bg-page: #FAFAFE;
     --bg-light: #F5F0FF;
     --border: #E2DAF2;
+    --table-line: #B7A4DA;
     --success-green: #16A34A;
     --error-red: #DC2626;
     --white: #FFFFFF;
@@ -688,6 +689,56 @@ html, body {
     border-bottom: 1px solid var(--border);
     color: var(--text-body);
     font-size: 11px;
+}
+
+/* ============================================================
+   TABLE GRID LINES (visual only)
+   box-shadow is stripped in @media print, and the default border
+   color is near-white, so tables read as "empty" (header only).
+   These rules add a visible grid to every report table.
+   ============================================================ */
+.aurora-table,
+.performance-table,
+.horizontal-metrics-table,
+.mini-summary-table,
+.blue-header-table {
+    border: 1px solid var(--table-line);
+}
+
+/* Column separators (headers + body) */
+.aurora-table thead th, .aurora-table tbody td,
+.performance-table thead th, .performance-table tbody td,
+.horizontal-metrics-table thead th, .horizontal-metrics-table tbody td,
+.mini-summary-table thead th, .mini-summary-table tbody td,
+.blue-header-table thead th, .blue-header-table tbody td {
+    border-right: 1px solid var(--table-line);
+}
+
+/* Row separators (body) — also covers tables whose cells had no border */
+.aurora-table tbody td,
+.performance-table tbody td,
+.horizontal-metrics-table tbody td,
+.mini-summary-table tbody td,
+.blue-header-table tbody td {
+    border-bottom: 1px solid var(--table-line);
+}
+
+/* No double line on the outer right edge */
+.aurora-table thead th:last-child, .aurora-table tbody td:last-child,
+.performance-table thead th:last-child, .performance-table tbody td:last-child,
+.horizontal-metrics-table thead th:last-child, .horizontal-metrics-table tbody td:last-child,
+.mini-summary-table thead th:last-child, .mini-summary-table tbody td:last-child,
+.blue-header-table thead th:last-child, .blue-header-table tbody td:last-child {
+    border-right: none;
+}
+
+/* No double line on the outer bottom edge */
+.aurora-table tbody tr:last-child td,
+.performance-table tbody tr:last-child td,
+.horizontal-metrics-table tbody tr:last-child td,
+.mini-summary-table tbody tr:last-child td,
+.blue-header-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
 .blue-header-table tbody tr:nth-child(even) {

@@ -189,8 +189,10 @@ function buildDonutChartSVG(segments, opts) {
     const r = opts.r || 80, rout = opts.rout || 105;
     const w = opts.width || 260, h = opts.height || 260;
 
-    // Clamp percentages to 0-100 and normalize so total = 100
-    segments = segments.map(seg => ({ ...seg, pct: Math.max(0, Math.min(100, seg.pct || 0)) }));
+    // Take raw non-negative values and normalize so total = 100.
+    // (Do NOT clamp to 100 here: callers may pass raw counts, not percentages —
+    //  clamping would turn e.g. 1500 vs 900 buyers into 100/100 = a false 50/50.)
+    segments = segments.map(seg => ({ ...seg, pct: Math.max(0, seg.pct || 0) }));
     const rawTotal = segments.reduce((s, seg) => s + seg.pct, 0);
     if (rawTotal > 0 && rawTotal !== 100) {
         segments = segments.map(seg => ({ ...seg, pct: (seg.pct / rawTotal) * 100 }));
@@ -223,9 +225,14 @@ function buildDonutChartSVG(segments, opts) {
             if (seg.pct > 0) {
                 const s = acc, e = acc + seg.pct, mid = midAng(s, e);
                 parts.push(`<path d="${arcPath(s, e)}" fill="${seg.color}" />`);
-                const lx = px(mid, rout + 24).toFixed(1), ly1 = (py(mid, rout + 24) - 5).toFixed(1), ly2 = (py(mid, rout + 24) + 9).toFixed(1);
-                parts.push(`<text x="${lx}" y="${ly1}" text-anchor="middle" font-size="8" font-weight="700" fill="${seg.color}">${seg.label}</text>`);
-                parts.push(`<text x="${lx}" y="${ly2}" text-anchor="middle" font-size="9" font-weight="900" fill="${seg.color}">${(opts.originalPcts && opts.originalPcts[seg.label] !== undefined ? opts.originalPcts[seg.label] : seg.pct).toFixed(1)}%</text>`);
+                // Anchor labels OUTWARD (start on the right, end on the left) so the
+                // text never overlaps the ring — a same-color label over the arc was
+                // invisible (e.g. "NEW BUYERS" looked like "EW BUYERS").
+                const lxNum = px(mid, rout + 16), lyNum = py(mid, rout + 16);
+                const anchor = lxNum > cx + 5 ? 'start' : (lxNum < cx - 5 ? 'end' : 'middle');
+                const lx = lxNum.toFixed(1), ly1 = (lyNum - 5).toFixed(1), ly2 = (lyNum + 9).toFixed(1);
+                parts.push(`<text x="${lx}" y="${ly1}" text-anchor="${anchor}" font-size="8" font-weight="700" fill="${seg.color}">${seg.label}</text>`);
+                parts.push(`<text x="${lx}" y="${ly2}" text-anchor="${anchor}" font-size="9" font-weight="900" fill="${seg.color}">${(opts.originalPcts && opts.originalPcts[seg.label] !== undefined ? opts.originalPcts[seg.label] : seg.pct).toFixed(1)}%</text>`);
             }
             acc += seg.pct;
         });
@@ -240,7 +247,10 @@ function buildDonutChartSVG(segments, opts) {
         parts.push(`<text x="${cx}" y="${cy + 14}" text-anchor="middle" font-size="16" font-weight="900" fill="${opts.centerColor || '#002B5B'}">${opts.centerValue}</text>`);
     }
 
-    return `<svg viewBox="0 0 ${w} ${h}" width="${opts.displayWidth || 210}" height="${opts.displayHeight || 210}">${parts.join('')}</svg>`;
+    // Pad the viewBox so the outer labels (positioned beyond `rout`) are not
+    // clipped at the edges (e.g. "NEW BUYERS" was rendering as "EW BUYERS").
+    const pad = opts.pad !== undefined ? opts.pad : 24;
+    return `<svg viewBox="${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}" width="${opts.displayWidth || 210}" height="${opts.displayHeight || 210}">${parts.join('')}</svg>`;
 }
 
 /**
@@ -584,14 +594,18 @@ async function buildRenderContext(data) {
         // Build SVG donut charts in JS (avoids EJS string-wrapping issues)
         const sp = (data.storePerformance && typeof data.storePerformance === 'object') ? data.storePerformance : {};
         // New Buyers vs Old Buyers for donut chart
-        const newBuyersPct = Math.max(0, Math.min(100, sp.newBuyers || sp.adSales || 0));
-        const oldBuyersPct = Math.max(0, Math.min(100, sp.oldBuyers || sp.existingSales || 0));
+        // Accept raw values (percentages OR counts). buildDonutChartSVG normalizes
+        // them to slices; the center shows the new-buyers share of the total.
+        const rawNewBuyers = Math.max(0, toNum(sp.newBuyers ?? sp.adSales ?? 0));
+        const rawOldBuyers = Math.max(0, toNum(sp.oldBuyers ?? sp.existingSales ?? 0));
+        const buyersTotal = rawNewBuyers + rawOldBuyers;
+        const newBuyersShare = buyersTotal > 0 ? (rawNewBuyers / buyersTotal) * 100 : 0;
         const shopeeDonutSvg = buildDonutChartSVG(
             [
-                { pct: newBuyersPct, color: templateConfig.colors.primary, label: 'NEW BUYERS' },
-                { pct: oldBuyersPct, color: templateConfig.colors.accent, label: 'OLD BUYERS' }
+                { pct: rawNewBuyers, color: templateConfig.colors.primary, label: 'NEW BUYERS' },
+                { pct: rawOldBuyers, color: templateConfig.colors.accent, label: 'OLD BUYERS' }
             ],
-            { cx: 150, cy: 150, r: 80, rout: 105, width: 300, height: 300, displayWidth: 240, displayHeight: 240, centerLabel: 'BUYERS', centerValue: newBuyersPct.toFixed(1) + '%', centerColor: templateConfig.colors.centerText }
+            { cx: 150, cy: 150, r: 80, rout: 105, width: 300, height: 300, displayWidth: 240, displayHeight: 240, centerLabel: 'BUYERS', centerValue: newBuyersShare.toFixed(1) + '%', centerColor: templateConfig.colors.centerText }
         );
 
         let tiktokDonutSvg = '';
