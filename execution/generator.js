@@ -96,7 +96,7 @@ function isUrlSafe(urlString) {
 // Shared warnings collector for current generation
 let _currentWarnings = [];
 
-async function imageToBase64(filePath, retries = 3) {
+async function imageToBase64(filePath, retries = 2) {
     try {
         // Handle HTTP/HTTPS URLs
         if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
@@ -109,7 +109,7 @@ async function imageToBase64(filePath, retries = 3) {
                 try {
                     const response = await axios.get(filePath, {
                         responseType: 'arraybuffer',
-                        timeout: 15000,
+                        timeout: 10000,
                         maxRedirects: 5,
                         validateStatus: (status) => status < 400,
                         headers: {
@@ -131,13 +131,16 @@ async function imageToBase64(filePath, retries = 3) {
                     const base64 = Buffer.from(response.data, 'binary').toString('base64');
                     return `data:${contentType};base64,${base64}`;
                 } catch (error) {
-                    if (attempt === retries) {
-                        console.warn(`File not found (after ${retries} attempts): ${filePath} - ${error.message}`);
+                    // Don't waste time retrying permanent failures (404/403 won't recover).
+                    const httpStatus = error.response && error.response.status;
+                    const permanent = httpStatus >= 400 && httpStatus < 500;
+                    if (permanent || attempt === retries) {
+                        console.warn(`Image download failed: ${filePath} - ${httpStatus || error.code || error.message}`);
                         _currentWarnings.push(`Failed to download image: ${filePath}`);
                         return '';
                     }
-                    // Wait before retry (exponential backoff)
-                    await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                    // Brief backoff before retry (network/5xx only)
+                    await new Promise(resolve => setTimeout(resolve, 300 * attempt));
                 }
             }
         }
@@ -475,17 +478,21 @@ async function buildRenderContext(data) {
             data.logoUrl = await imageToBase64(data.logoUrl);
         }
 
-        // Process Top Products Images
+        // Collect every image download and run them CONCURRENTLY.
+        // (Previously these ran one-by-one; with ~20+ images per brand that pushed
+        //  total generation past the caller's timeout. Parallel ≈ slowest single image.)
+        const imageTasks = [];
+
+        // Top Products
         if (data.topProducts && Array.isArray(data.topProducts)) {
             for (const p of data.topProducts) {
                 if (p.image && !p.image.startsWith('data:')) {
-                    // Convert both local paths and HTTP URLs to Base64
-                    p.image = await imageToBase64(p.image);
+                    imageTasks.push((async () => { p.image = await imageToBase64(p.image); })());
                 }
             }
         }
 
-        // Process CPAS Best Campaign Images
+        // CPAS Best Campaign Images (+ sync safety checks)
         if (data.cpas_data) {
             // Safety Check: Populate awareness_nv with 0s if empty
             if (!data.cpas_data.awareness_nv || data.cpas_data.awareness_nv.length === 0) {
@@ -510,49 +517,45 @@ async function buildRenderContext(data) {
             }
 
             if (data.cpas_data.best_campaigns) {
-                const types = ['nv', 'rm'];
-                for (const type of types) {
-                    if (data.cpas_data.best_campaigns[type] && Array.isArray(data.cpas_data.best_campaigns[type].images)) {
-                        for (let i = 0; i < data.cpas_data.best_campaigns[type].images.length; i++) {
-                            let imgUrl = data.cpas_data.best_campaigns[type].images[i];
+                for (const type of ['nv', 'rm']) {
+                    const bc = data.cpas_data.best_campaigns[type];
+                    if (bc && Array.isArray(bc.images)) {
+                        bc.images.forEach((imgUrl, i) => {
                             if (imgUrl && !imgUrl.startsWith('data:')) {
-                                // Convert both local paths and HTTP URLs to Base64
-                                data.cpas_data.best_campaigns[type].images[i] = await imageToBase64(imgUrl);
+                                imageTasks.push((async () => { bc.images[i] = await imageToBase64(imgUrl); })());
                             }
-                        }
+                        });
                     }
                 }
             }
         }
 
-        // Process Operational Screenshots
+        // Operational Screenshots
         if (data.operationalScreenshots && Array.isArray(data.operationalScreenshots)) {
-            for (let i = 0; i < data.operationalScreenshots.length; i++) {
-                let imgUrl = data.operationalScreenshots[i];
+            data.operationalScreenshots.forEach((imgUrl, i) => {
                 if (imgUrl && !imgUrl.startsWith('data:')) {
-                    // Convert both local paths and HTTP URLs to Base64
-                    data.operationalScreenshots[i] = await imageToBase64(imgUrl);
+                    imageTasks.push((async () => { data.operationalScreenshots[i] = await imageToBase64(imgUrl); })());
                 }
-            }
+            });
         }
 
-        // Process Promotion Screenshots
+        // Promotion Screenshots
         if (data.promotionScreenshots && Array.isArray(data.promotionScreenshots)) {
-            for (let i = 0; i < data.promotionScreenshots.length; i++) {
-                let imgUrl = data.promotionScreenshots[i];
+            data.promotionScreenshots.forEach((imgUrl, i) => {
                 if (imgUrl && !imgUrl.startsWith('data:')) {
-                    // Convert both local paths and HTTP URLs to Base64
-                    data.promotionScreenshots[i] = await imageToBase64(imgUrl);
+                    imageTasks.push((async () => { data.promotionScreenshots[i] = await imageToBase64(imgUrl); })());
                 }
-            }
+            });
         }
 
-        // Process Ads Performance Chart
+        // Ads Performance Chart
         if (data.adsChartUrl && !data.adsChartUrl.startsWith('data:')) {
-            data.adsChartUrl = await imageToBase64(data.adsChartUrl);
+            imageTasks.push((async () => { data.adsChartUrl = await imageToBase64(data.adsChartUrl); })());
         } else if (data.adsPerformanceChart && !data.adsPerformanceChart.startsWith('data:')) {
-            data.adsChartUrl = await imageToBase64(data.adsPerformanceChart);
+            imageTasks.push((async () => { data.adsChartUrl = await imageToBase64(data.adsPerformanceChart); })());
         }
+
+        await Promise.all(imageTasks);
 
         // 3. READ CSS AND EJS (template-driven)
         let cssContent = await fs.readFile(path.join(__dirname, 'templates', templateConfig.css), 'utf-8');
