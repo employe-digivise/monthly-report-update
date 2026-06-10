@@ -129,7 +129,7 @@ function sanitizeString(str, maxLen = 200) {
  * Validate and sanitize enabledChannels
  */
 function sanitizeEnabledChannels(channels) {
-    const validChannels = ['shopee', 'tiktok', 'tokopedia', 'lazada', 'blibli', 'cpas'];
+    const validChannels = ['shopee', 'tiktok', 'tokopedia', 'lazada', 'blibli', 'cpas', 'zalora'];
     const result = {};
     for (const ch of validChannels) {
         result[ch] = !!(channels && typeof channels === 'object' && channels[ch]);

@@ -109,6 +109,7 @@ Failures per slot are logged but do not abort the request.
     "shopee": true,
     "tiktok": true,
     "tokopedia": true,
+    "zalora": false,
     "lazada": false,
     "blibli": false,
     "cpas": true
@@ -165,6 +166,7 @@ Failures per slot are logged but do not abort the request.
           "shopee": "Rp597M",
           "tiktok": "Rp49M",
           "tokopedia": "Rp50M",
+          "zalora": "Rp0",
           "lazada": "Rp0",
           "blibli": "Rp0"
         }
@@ -178,6 +180,7 @@ Failures per slot are logged but do not abort the request.
           "shopee": "Rp72M",
           "tiktok": "Rp4M",
           "tokopedia": "Rp4M",
+          "zalora": "Rp0",
           "lazada": "Rp0",
           "blibli": "Rp0"
         }
@@ -191,6 +194,7 @@ Failures per slot are logged but do not abort the request.
           "shopee": "12.06%",
           "tiktok": "8.93%",
           "tokopedia": "8.00%",
+          "zalora": "0%",
           "lazada": "0%",
           "blibli": "0%"
         }
@@ -204,6 +208,7 @@ Failures per slot are logged but do not abort the request.
           "shopee": "8.29x",
           "tiktok": "11.20x",
           "tokopedia": "12.50x",
+          "zalora": "0x",
           "lazada": "0x",
           "blibli": "0x"
         }
@@ -528,7 +533,7 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
 
 **Behavior:**
 - **Channel columns are added dynamically** for each enabled channel
-- **Column order**: `shopee` → `tiktok` → `tokopedia` → `lazada` → `blibli`
+- **Column order**: `shopee` → `tiktok` → `tokopedia` → `zalora` → `lazada` → `blibli`
 - **If a channel is `false`**: Its column is NOT displayed
 - **If a channel is `true`**: Its column appears in the table
 
@@ -560,7 +565,7 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
 
 **Data Requirements:**
 - Each metric row in `comparisonData` must include a `channels` object
-- The `channels` object should contain values for ALL possible channels (shopee, tiktok, tokopedia, lazada, blibli)
+- The `channels` object should contain values for ALL possible channels (shopee, tiktok, tokopedia, zalora, lazada, blibli)
 - Use `"-"` or `"Rp0"` or `"0%"` for channels with no data
 - Missing channel values will display as `"-"`
 
@@ -575,6 +580,7 @@ The Global Performance table on **Page 7** dynamically adjusts its columns based
     "shopee": "Rp647M",
     "tiktok": "Rp49M",
     "tokopedia": "Rp0",
+    "zalora": "Rp0",
     "lazada": "Rp0",
     "blibli": "Rp0"
   }
