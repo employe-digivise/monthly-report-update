@@ -217,11 +217,31 @@ npm start
 ngrok http 3000
 ```
 
-### Modal (Production)
+### VPS (Production)
 
-Sistem berjalan sebagai Modal Function dengan custom Node.js container yang
-membungkus `execution/server.js`. Tujuannya: lepas Puppeteer dari VPS shared
-(masalah resource bentrok dengan project lain) dan dapat auto-scale.
+Sejak 2026-06-11 backend berjalan di VPS Digivise (31.97.222.83) di bawah PM2
+— engine pdfmake native cukup ringan (~200 MB peak) sehingga aman berdampingan
+dengan service lain di VPS shared (alasan lama pindah ke Modal adalah Chromium
+~1 GB/render; itu sudah tidak relevan).
+
+```bash
+# provisioning sekali (Node 20 + PM2):
+bash scripts/install-vps.sh root@31.97.222.83
+# deploy/update (git reset ke origin/main + npm ci --omit=dev + pm2 reload):
+bash scripts/deploy-vps.sh root@31.97.222.83
+```
+
+- Endpoint publik: `http://31.97.222.83:3000` (port 3000 dibuka via ufw)
+- Frontend memanggil lewat Supabase Edge Function `report-generator-webhook`
+  (repo vivid-monitor) yang default-nya menunjuk ke endpoint di atas —
+  override via secret `REPORT_GENERATOR_WEBHOOK_URL`
+- Env produksi diatur di `ecosystem.config.js` (PORT, ALLOWED_ORIGINS,
+  INSIGHT_AI_DISABLED)
+
+### Modal (alternatif — saat ini DIHENTIKAN)
+
+App Modal `monthly-report` di-stop saat migrasi ke VPS (`modal app stop
+monthly-report`); `modal_app.py` dipertahankan bila perlu kembali auto-scale.
 
 **Prasyarat satu kali:**
 
