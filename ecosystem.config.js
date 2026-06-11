@@ -9,7 +9,12 @@ module.exports = {
             max_memory_restart: '1G',
             env: {
                 NODE_ENV: 'production',
-                PORT: 3000
+                PORT: 3000,
+                // Mirror the (former) Modal deployment env:
+                // browser may call the API directly → allow any origin
+                ALLOWED_ORIGINS: '*',
+                // Claude insight auto-fill off until Anthropic credits topped up
+                INSIGHT_AI_DISABLED: '1'
             },
             error_file: 'logs/pm2-error.log',
             out_file: 'logs/pm2-out.log',
