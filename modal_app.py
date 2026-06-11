@@ -65,10 +65,11 @@ image = (
         # Insight auto-fill (Claude Haiku) disabled in this deploy.
         # Switch to "0" + attach `anthropic-api-key` secret to enable.
         "INSIGHT_AI_DISABLED": "1",
-        # PDF engine: WeasyPrint (~-75% RAM vs Chromium). Verified on Linux/Modal —
-        # fonts (Inter/Montserrat incl. Black), charts, gradients render correctly.
-        # Fall back to puppeteer by setting this to "puppeteer".
-        "PDF_ENGINE": "weasyprint",
+        # PDF engine: puppeteer (Chromium). WeasyPrint saves RAM but is CPU-bound and
+        # renders this report in ~13s on Modal's 2 vCPU -> exceeded the caller's timeout
+        # (502). Puppeteer's Chromium renders in ~1.5s on the same CPU, so total is ~3-5s.
+        # Set to "weasyprint" only on a higher-vCPU host or with async generation.
+        "PDF_ENGINE": "puppeteer",
     })
     # Add the rest of the app *after* deps so code changes don't bust the
     # npm-ci layer.
@@ -104,7 +105,9 @@ app = modal.App(APP_NAME, image=image)
     max_containers=5,      # cap fan-out so we don't surprise-bill
     scaledown_window=300,  # 5 min idle before scale to zero (beyond the warm one)
 )
-@modal.concurrent(max_inputs=3)  # matches MAX_CONCURRENT in generator.js
+@modal.concurrent(max_inputs=1)  # 1 Puppeteer render per container (~1GB) fits the 2GB
+                                 # limit and gets the full 2 vCPU; Modal scales out to
+                                 # max_containers for concurrency.
 @modal.web_server(port=NODE_PORT, startup_timeout=60)
 def web():
     import subprocess
