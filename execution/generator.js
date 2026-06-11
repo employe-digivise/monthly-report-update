@@ -256,10 +256,19 @@ function buildDonutChartSVG(segments, opts) {
     return `<svg viewBox="${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}" width="${opts.displayWidth || 210}" height="${opts.displayHeight || 210}">${parts.join('')}</svg>`;
 }
 
+// Selectable PDF engine: pdfmake (default, native/in-process) | puppeteer | weasyprint.
+// What each engine consumes decides whether buildRenderContext must produce HTML.
+const PDF_ENGINE = (process.env.PDF_ENGINE || 'pdfmake').trim().toLowerCase();
+const ENGINE_CONSUMES = { puppeteer: 'html', weasyprint: 'html', pdfmake: 'data' };
+if (!ENGINE_CONSUMES[PDF_ENGINE]) {
+    console.warn(`[pdf-engine] Unknown PDF_ENGINE "${PDF_ENGINE}" — falling back to pdfmake`);
+}
+
 /**
  * Phase 1 of PDF generation: engine-agnostic preprocessing.
- * Normalizes the payload, embeds images/fonts as base64, builds SVG charts,
- * and renders the static HTML. Returns a render context consumed by a renderer.
+ * Normalizes the payload, embeds images as base64 and builds SVG charts; for
+ * HTML engines it also embeds fonts and renders the EJS template. Returns a
+ * render context consumed by a renderer.
  */
 async function buildRenderContext(data) {
     _currentWarnings = []; // Reset warnings for this generation
@@ -275,6 +284,15 @@ async function buildRenderContext(data) {
         if (!data.topProducts || !Array.isArray(data.topProducts)) {
             data.topProducts = [];
         }
+        // null/primitive entries would crash the revenue sort below
+        data.topProducts = data.topProducts.filter(p => p && typeof p === 'object');
+
+        // Channel data blobs that arrive as primitives (string/number) would
+        // make every nested safety-check below silently no-op and then crash
+        // on the first nested read — normalize them to objects/null up front.
+        if (data.tiktok_data && typeof data.tiktok_data !== 'object') data.tiktok_data = {};
+        if (data.tokopedia_data && typeof data.tokopedia_data !== 'object') data.tokopedia_data = {};
+        if (data.cpas_data && typeof data.cpas_data !== 'object') data.cpas_data = null;
 
         // TikTok Safety Check — defensive per-field so partial payloads
         // (e.g. store_performance present but gmv_max_performance missing)
@@ -326,9 +344,11 @@ async function buildRenderContext(data) {
         // globalPerformanceDetail Safety Check
         if (data.globalPerformanceDetail) {
             if (data.globalPerformanceDetail.comparisonData) {
-                data.globalPerformanceDetail.comparisonData = data.globalPerformanceDetail.comparisonData.map(row => ({
-                    ...row,
-                    channels: row.channels || {}
+                // non-array → [] ("Data tidak tersedia" row); null rows → {}
+                const cmp = data.globalPerformanceDetail.comparisonData;
+                data.globalPerformanceDetail.comparisonData = (Array.isArray(cmp) ? cmp : []).map(row => ({
+                    ...(row && typeof row === 'object' ? row : {}),
+                    channels: (row && row.channels) || {}
                 }));
             }
 
@@ -438,8 +458,8 @@ async function buildRenderContext(data) {
             }
         }
 
-        // Slice to 5
-        data.topProducts.sort((a, b) => (b.revenue || 0) - (a.revenue || 0));
+        // Slice to 10 (string revenues coerced so the sort can't NaN-shuffle)
+        data.topProducts.sort((a, b) => toNum(b.revenue) - toNum(a.revenue));
         data.topProducts = data.topProducts.slice(0, 10);
 
         // Action Plan: Limit to 5 rows but DO NOT TRUNCATE TEXT
@@ -557,10 +577,17 @@ async function buildRenderContext(data) {
 
         await Promise.all(imageTasks);
 
-        // 3. READ CSS AND EJS (template-driven)
-        let cssContent = await fs.readFile(path.join(__dirname, 'templates', templateConfig.css), 'utf-8');
+        // 3. READ CSS AND EJS (HTML engines only — pdfmake builds straight from
+        //    `data` + `charts`, so skip the css/font/EJS work entirely).
+        //    Unknown engines fall back to pdfmake (see RENDERERS below), so
+        //    they must not pay the HTML build either.
+        const needsHtml = (ENGINE_CONSUMES[PDF_ENGINE] || 'data') === 'html';
+        let cssContent = '';
+        let templateContent = '';
+        if (needsHtml) {
+        cssContent = await fs.readFile(path.join(__dirname, 'templates', templateConfig.css), 'utf-8');
         const templatePath = path.join(__dirname, 'templates', templateConfig.ejs);
-        const templateContent = await fs.readFile(templatePath, 'utf-8');
+        templateContent = await fs.readFile(templatePath, 'utf-8');
 
         // 3b. EMBED FONTS AS BASE64 (offline-safe, no Google Fonts CDN dependency)
         const fontsDir = path.join(__dirname, 'assets', 'fonts');
@@ -586,6 +613,7 @@ async function buildRenderContext(data) {
         // Remove the CDN @import and prepend embedded fonts instead
         cssContent = cssContent.replace(/@import url\([^)]+\);\s*/g, '');
         cssContent = embeddedFontCSS + cssContent;
+        }
 
         // 4. RENDER HTML
         // Ensure optional data objects are defined to prevent EJS ReferenceErrors
@@ -624,17 +652,17 @@ async function buildRenderContext(data) {
             );
         }
 
-        const html = await ejs.render(templateContent, {
+        const html = needsHtml ? await ejs.render(templateContent, {
             ...data,
             cssContent: cssContent,
             shopeeDonutSvg: shopeeDonutSvg,
             tiktokDonutSvg: tiktokDonutSvg
-        }, { async: true });
+        }, { async: true }) : '';
 
         // Compute the output path; the selected renderer writes the PDF here.
         const outputDir = path.join(__dirname, '..', 'output');
         await fs.ensureDir(outputDir);
-        const outputPath = path.join(outputDir, `Report_${data.brandName.replace(/\s+/g, '_')}_${Date.now()}.pdf`);
+        const outputPath = path.join(outputDir, `Report_${String(data.brandName || 'Report').replace(/\s+/g, '_')}_${Date.now()}.pdf`);
 
         // Engine-agnostic render context.
         //  - puppeteer / weasyprint consume `html` (fully static, self-contained).
@@ -655,9 +683,7 @@ async function buildRenderContext(data) {
     }
 }
 
-// Selectable PDF engine: puppeteer (default) | weasyprint | pdfmake.
 // Renderers are lazy-required so only the chosen engine's deps load (keeps RAM benchmarks fair).
-const PDF_ENGINE = (process.env.PDF_ENGINE || 'puppeteer').toLowerCase();
 const RENDERERS = {
     puppeteer: () => require('./renderers/puppeteer'),
     weasyprint: () => require('./renderers/weasyprint'),
@@ -672,8 +698,17 @@ async function generatePDF(data) {
     await acquireSlot();
     try {
         const ctx = await buildRenderContext(data);
-        const load = RENDERERS[PDF_ENGINE] || RENDERERS.puppeteer;
-        const renderer = load();
+        const load = RENDERERS[PDF_ENGINE] || RENDERERS.pdfmake;
+        let renderer;
+        try {
+            renderer = load();
+        } catch (err) {
+            // e.g. PDF_ENGINE=puppeteer in a production build where puppeteer
+            // is a devDependency — fail with a actionable message instead of
+            // a bare MODULE_NOT_FOUND.
+            throw new Error(`PDF engine "${PDF_ENGINE}" is not installed in this build (${err.message}). ` +
+                'Use PDF_ENGINE=pdfmake or reinstall with devDependencies.');
+        }
         console.log(`Rendering with engine: ${renderer.name}`);
         return await renderer.render(ctx, ctx.outputPath);
     } finally {

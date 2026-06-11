@@ -76,36 +76,54 @@ chart, halaman donut), semuanya faithful:
    di Modal (Linux): semua 8 weight Inter+Montserrat ter-embed; judul cover kini Montserrat
    Black asli. (Noto tetap muncul sebagai jaring pengaman per-glyph untuk simbol langka — normal.)
 
-**STATUS: WeasyPrint kini DEFAULT di Modal.** `modal_app.py` set `PDF_ENGINE=weasyprint`
-(diverifikasi live). `install-vps.sh` + `modal_app.py` meng-install WeasyPrint + lib
-pendukung. Fallback ke Chromium: set `PDF_ENGINE=puppeteer`
-(di VPS juga `WEASYPRINT_BIN=/opt/weasyprint-venv/bin/weasyprint`).
+**STATUS (terbaru): pdfmake kini DEFAULT — laporan aurora PENUH dibangun native.**
+Rewrite layout yang dulu jadi blocker pdfmake **sudah dikerjakan**:
+`execution/renderers/pdfmake/` membangun seluruh laporan (16-22 halaman, semua
+section + conditional channel) sebagai docDefinition imperatif yang me-mirror
+`template_aurora.ejs`/`styles_aurora.css`, diverifikasi visual halaman-per-halaman
+vs baseline Puppeteer. Font TTF Inter/Montserrat dibundel di
+`execution/assets/fonts/ttf/` (pdfkit tidak bisa baca woff2). `modal_app.py` set
+`PDF_ENGINE=pdfmake`; image Modal tanpa lib Chromium & tanpa WeasyPrint.
 
-**pdfmake — chart bisa, layout harus ditulis ulang.** Spike (`scripts/spike-pdfmake.js`)
-membuktikan node `svg` pdfmake **berhasil** render donut DAN bar gradient kita
-(di luar dugaan — gradient `url(#id)` sering gagal di svg-to-pdfkit, di sini jalan).
-TAPI pdfmake tidak baca HTML/CSS: seluruh ~19 halaman aurora harus dibangun ulang
-sebagai `docDefinition` imperatif, tanpa gradient box (jadi flat), dan font wajib
-TTF (Inter/Montserrat sekarang woff2 → fallback Roboto).
+Hasil laporan PENUH (bukan subset, median 3 run, macOS arm64):
 
-## Rekomendasi
+| payload | render ms | peak RSS | RAM vs puppeteer |
+|---|--:|--:|--:|
+| test_payload (16 hal) | ~320 | ~209 MB | **−82%** |
+| goods_a_footwear (16 hal) | ~363 | ~196 MB | **−82%** |
 
-**Adopsi WeasyPrint.** −75% RAM (jauh di atas ambang −40%), kecepatan render setara
-(≤1.5× warm), fidelity setara, dan **mempertahankan 4 template→1 template HTML/CSS**
-(nyaris tanpa rewrite). pdfmake paling ringan tapi butuh rewrite layout penuh +
-kehilangan alur "edit CSS" → effort/risiko tertinggi, hanya worth jika butuh nol
-dependensi biner.
+Render 2-pass (pass pengukuran untuk vertical centering + nomor halaman fisik)
+sudah termasuk di angka di atas. Gambar payload non-PNG/JPEG (webp/avif/svg,
+termasuk yang korup/mislabeled) dinormalisasi ke PNG via sharp sebelum render.
 
-### Langkah adopsi WeasyPrint (belum dikerjakan — menunggu keputusan)
+Catatan implementasi penting (pelajaran untuk pengembangan section berikutnya):
+- **rowSpan pdfmake bocor garis**: hLine tetap digambar menembus filler cell
+  rowSpan (border flags filler diabaikan) dan fill span tersegmentasi per baris.
+  Solusi di cpas/tiktok/tokopedia: header 2-baris diratakan jadi 1 baris dengan
+  cell ber-stack (PERIODE di atas dua tanggal), kolom objective pakai sel riil
+  per baris (fill sama, label di baris tengah, `border:[false×4]`).
+- **`widths` tabel = lebar KONTEN**: padding + garis grid ditambahkan di atasnya.
+  Kolom yang dijumlahkan ke `H.PAGE.CW` akan meluber ~50-90pt; kurangi
+  `(nKolom+1)×0.75` + padding per kolom dulu.
+- **Vertical centering** (`.page{justify-content:center}` di HTML) ditangani
+  global oleh assembler (pass 1 ukur tinggi konten via marker + pageBreakBefore;
+  marker WAJIB `text:' '` — node `text:''` difilter pdfmake). Section tidak
+  boleh menambah spacer sendiri.
+- `createPdf()` MEMUTASI docDefinition (image data-URI → kunci `$$pdfmake$$N`)
+  → pass pengukuran harus pakai deep-clone.
 
-1. Produksi: pakai **sidecar Python long-lived** (bukan `spawn` per request) agar
-   tak bayar ~0.5–1 s import Pango tiap render. (`spawn` oke untuk volume rendah.)
-2. Image Modal/VPS: `pip install weasyprint` + `apt-get install libpango-1.0-0
-   libpangocairo-1.0-0 libcairo2 libgdk-pixbuf-2.0-0 libffi8 fonts-liberation`
-   — ±setengah jumlah lib Chromium, tanpa binary ~170 MB. Drop lib Chromium hanya
-   kalau Puppeteer benar-benar dilepas.
-3. Set `PDF_ENGINE=weasyprint` (+ `WEASYPRINT_BIN` bila perlu).
-4. Pertahankan Puppeteer sebagai fallback (`PDF_ENGINE=puppeteer`) sampai stabil.
+**Fallback**: `PDF_ENGINE=puppeteer` (butuh `npm install` dengan devDependencies —
+puppeteer bukan dependency production lagi) atau `PDF_ENGINE=weasyprint` (butuh
+binary weasyprint; `WEASYPRINT_BIN` bila perlu). Keduanya tetap berfungsi via
+jalur HTML/EJS yang dipertahankan.
+
+## Rekomendasi (riwayat)
+
+Rekomendasi sebelumnya — adopsi WeasyPrint (−75% RAM, tanpa rewrite) — sudah
+digantikan oleh keputusan rewrite penuh ke pdfmake (−82% RAM, nol dependensi
+biner browser, render <0.5 s). Trade-off yang diterima: kehilangan alur
+"edit CSS" (perubahan layout kini di modul section JS), tanpa rounded corner
+pada tabel, header tabel flat (bukan gradient), tanpa blur/shadow.
 
 ### Setup dev lokal (macOS, sudah dilakukan di mesin ini)
 

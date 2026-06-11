@@ -8,8 +8,9 @@ Sistem generasi laporan PDF bulanan untuk brand e-commerce. Menghasilkan laporan
 |----------|-----------|
 | Runtime | Node.js |
 | Web Framework | Express.js v5 |
-| PDF Engine | Puppeteer (Headless Chrome) |
-| Templating | EJS |
+| PDF Engine | pdfmake (native, in-process — tanpa browser) |
+| Image Processing | sharp (konversi webp/avif/svg → PNG) |
+| Templating | EJS (hanya untuk engine fallback puppeteer/weasyprint) |
 | HTTP Client | Axios |
 | Logging | Morgan |
 | Deployment | Modal (serverless, custom Node container) |
@@ -19,18 +20,25 @@ Sistem generasi laporan PDF bulanan untuk brand e-commerce. Menghasilkan laporan
 ```
 ├── execution/
 │   ├── server.js              # Express server & routing
-│   ├── generator.js           # Core PDF generation engine
+│   ├── generator.js           # Preprocessing payload + pemilihan engine (PDF_ENGINE)
 │   ├── sample_data.json       # Contoh payload untuk testing
-│   ├── assets/                # Logo & font files
+│   ├── assets/fonts/ttf/      # Inter & Montserrat TTF (di-embed pdfmake)
+│   ├── renderers/
+│   │   ├── pdfmake/           # ENGINE DEFAULT — laporan aurora penuh sebagai docDefinition
+│   │   │   ├── index.js       #   assembler (urutan section, centering 2-pass, footer)
+│   │   │   ├── theme.js       #   warna/font/format helper (mirror styles_aurora.css)
+│   │   │   └── sections/      #   satu modul per section laporan (13 modul)
+│   │   ├── puppeteer.js       # fallback HTML→PDF via Chromium (perlu devDependencies)
+│   │   └── weasyprint.js      # fallback HTML→PDF via WeasyPrint
 │   └── templates/
-│       ├── template_aurora.ejs     # Template Aurora — satu-satunya template (tema ungu & oranye)
-│       └── styles_aurora.css       # Styling Aurora
+│       ├── template_aurora.ejs     # Template HTML aurora (dipakai engine fallback; juga
+│       └── styles_aurora.css       #   spec visual yang di-mirror renderer pdfmake)
 ├── directives/
 │   ├── API_DOCS.md            # Referensi API lengkap
+│   ├── RENDERER_BENCHMARK.md  # Benchmark & keputusan engine PDF
 │   └── generate_pdf_report.md # SOP generasi PDF
 ├── output/                    # Direktori output PDF (lokal saja)
 ├── modal_app.py               # Modal deployment (Node container + web_server)
-├── .modalignore               # File yang dikecualikan dari Modal upload
 ├── package.json
 └── .env                       # Environment variables (lokal saja)
 ```
@@ -55,8 +63,10 @@ npm install
 
 ### Prasyarat
 
-- Node.js >= 18
-- Chromium/Chrome (diinstall otomatis oleh Puppeteer)
+- Node.js >= 18 — itu saja. Engine default (pdfmake) berjalan in-process tanpa
+  browser; font TTF sudah dibundel di repo dan sharp membawa libvips prebuilt.
+- Opsional: `npm install` penuh (dengan devDependencies) memasang Puppeteer
+  untuk engine fallback `PDF_ENGINE=puppeteer` dan benchmark.
 
 ## Menjalankan Server
 
@@ -249,10 +259,13 @@ modal serve modal_app.py
 ```
 
 **Konfigurasi container** (lihat `modal_app.py`):
-- 2 vCPU, 2 GB memory
+- 1 vCPU, 1 GB memory (engine pdfmake ~200 MB peak per render — turun dari
+  2 vCPU / 2 GB era Puppeteer)
 - `min_containers=1` — satu container always-warm, hilangkan cold start
 - `max_containers=5` — cap fan-out
 - `max_inputs=3` — match `MAX_CONCURRENT` di generator.js
+- Secret `anthropic-api-key` TIDAK wajib: `INSIGHT_AI_DISABLED=1` di image
+  (lihat komentar di modal_app.py untuk mengaktifkan kembali auto-insight)
 
 **Health check:**
 
@@ -262,7 +275,10 @@ curl https://<workspace>--monthly-report-web.modal.run/health
 
 ## Performa
 
-- Waktu generasi: **4-7 detik** per PDF
+- Render engine (pdfmake, laporan 16-22 halaman): **~0.3-0.5 detik**; total
+  termasuk download gambar payload biasanya **1-3 detik**
+- Peak RAM per render: **~200 MB** (vs ~1.1 GB Puppeteer; lihat
+  `directives/RENDERER_BENCHMARK.md`)
 - Format output: **A4**
 - Mendukung payload hingga **50 MB**
 

@@ -1,9 +1,14 @@
 """
 Modal deployment for the monthly-report PDF generator.
 
-Wraps the existing Node.js / Express / Puppeteer app in a Modal custom image
-and exposes it via `@modal.web_server` so frontend / Edge Function can hit
+Wraps the Node.js / Express app in a Modal custom image and exposes it via
+`@modal.web_server` so frontend / Edge Function can hit
 https://<workspace>--monthly-report-web.modal.run/... without code rewrite.
+
+PDF engine: pdfmake (native, in-process). No Chromium, no WeasyPrint — the
+image needs only Node 20 + npm deps (sharp ships its own prebuilt libvips).
+Benchmark: ~110 MB peak RSS per render vs ~1.1 GB with Puppeteer (−90%).
+Fonts (Inter/Montserrat TTF) are bundled in execution/assets/fonts/ttf.
 
 Deploy:
     modal deploy modal_app.py
@@ -17,8 +22,8 @@ APP_NAME = "monthly-report"
 NODE_PORT = 3000  # what execution/server.js binds to (see PORT env below)
 
 # ---------------------------------------------------------------------------
-# Image: Debian slim + Node.js 20 + Chromium runtime libs for Puppeteer.
-# Mirrors the apt-get list from scripts/install-vps.sh.
+# Image: Debian slim + Node.js 20. `npm ci --omit=dev` skips puppeteer (a
+# devDependency now), so no Chromium download and no browser shared libs.
 # ---------------------------------------------------------------------------
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -27,34 +32,11 @@ image = (
         "curl -fsSL https://deb.nodesource.com/setup_20.x | bash -",
         "apt-get install -y nodejs",
     )
-    .apt_install(
-        # Fonts
-        "fonts-liberation", "fonts-noto", "fonts-noto-color-emoji",
-        # Chromium shared libs
-        "libasound2", "libatk-bridge2.0-0", "libatk1.0-0", "libatspi2.0-0",
-        "libcairo2", "libcups2", "libdbus-1-3", "libdrm2", "libexpat1",
-        "libgbm1", "libglib2.0-0", "libgtk-3-0", "libnspr4", "libnss3",
-        "libpango-1.0-0", "libpangocairo-1.0-0", "libx11-6", "libx11-xcb1",
-        "libxcb1", "libxcomposite1", "libxdamage1", "libxext6", "libxfixes3",
-        "libxkbcommon0", "libxrandr2", "libxshmfence1", "libxss1", "libxtst6",
-        "wget", "xdg-utils",
-    )
-    # WeasyPrint (optional PDF engine: PDF_ENGINE=weasyprint, ~-75% RAM vs Chromium).
-    # pango/cairo already present above; add gdk-pixbuf/ffi/harfbuzz/pangoft2 + the lib.
-    # Report fonts are embedded via @font-face data-URIs (WeasyPrint loads them on Linux),
-    # so no extra font files are needed.
-    .apt_install(
-        "libgdk-pixbuf-2.0-0", "libffi8", "libharfbuzz0b", "libpangoft2-1.0-0",
-    )
-    # Non-fatal: a WeasyPrint install hiccup must never break the puppeteer (default)
-    # deploy. If it fails, PDF_ENGINE=weasyprint won't work but puppeteer is unaffected.
-    .run_commands("python -m pip install weasyprint brotli || echo 'WARN: weasyprint install skipped'")
     # Copy package manifests first → maximize Docker layer cache for npm ci
     .add_local_file("package.json", "/app/package.json", copy=True)
     .add_local_file("package-lock.json", "/app/package-lock.json", copy=True)
     .workdir("/app")
     .run_commands(
-        # Puppeteer downloads Chromium during npm ci; cache it inside the image
         "npm ci --omit=dev",
     )
     .env({
@@ -65,18 +47,24 @@ image = (
         # Insight auto-fill (Claude Haiku) disabled in this deploy.
         # Switch to "0" + attach `anthropic-api-key` secret to enable.
         "INSIGHT_AI_DISABLED": "1",
-        # PDF engine: puppeteer (Chromium). WeasyPrint saves RAM but is CPU-bound and
-        # renders this report in ~13s on Modal's 2 vCPU -> exceeded the caller's timeout
-        # (502). Puppeteer's Chromium renders in ~1.5s on the same CPU, so total is ~3-5s.
-        # Set to "weasyprint" only on a higher-vCPU host or with async generation.
-        "PDF_ENGINE": "puppeteer",
+        # Native in-process engine (default). HTML fallbacks (puppeteer /
+        # weasyprint) are NOT installed in this image — to use one, restore
+        # the browser libs + deps from git history first.
+        "PDF_ENGINE": "pdfmake",
+        # Frontend calls this API directly from the browser → allow any origin.
+        # (server.js CORS defaults to localhost only, which 500s the preflight.)
+        "ALLOWED_ORIGINS": "*",
     })
     # Add the rest of the app *after* deps so code changes don't bust the
     # npm-ci layer.
+    # NOTE: .modalignore is NOT honored by modal>=1.x — exclusions must be
+    # passed explicitly. sample_data.json contains real brand/client data and
+    # must never ship into the image.
     .add_local_dir(
         "execution",
         "/app/execution",
         copy=True,
+        ignore=["**/sample_data.json", "**/*.bak*", "**/*.backup", "**/.DS_Store"],
     )
     .add_local_dir(
         "directives",
@@ -98,16 +86,15 @@ app = modal.App(APP_NAME, image=image)
     #   1) modal secret create anthropic-api-key ANTHROPIC_API_KEY=sk-ant-...
     #   2) add `secrets=[modal.Secret.from_name("anthropic-api-key")]` here
     #   3) flip INSIGHT_AI_DISABLED to "0" in the .env({...}) block above
-    cpu=2.0,
-    memory=2048,
-    timeout=300,           # generous: PDF gen ~5-10s, plus image pulls
+    cpu=1.0,               # pdfmake render is sub-second; downloads are I/O-bound
+    memory=1024,           # ~110 MB/render peak + headroom for parallel image buffers
+    timeout=300,           # generous: PDF gen ~2-5s incl. image pulls
     min_containers=1,      # keep 1 warm → eliminate cold-start for first request
     max_containers=5,      # cap fan-out so we don't surprise-bill
     scaledown_window=300,  # 5 min idle before scale to zero (beyond the warm one)
 )
-@modal.concurrent(max_inputs=1)  # 1 Puppeteer render per container (~1GB) fits the 2GB
-                                 # limit and gets the full 2 vCPU; Modal scales out to
-                                 # max_containers for concurrency.
+@modal.concurrent(max_inputs=3)  # matches generator.js MAX_CONCURRENT=3; pdfmake
+                                 # renders in-process (~110 MB each) so 3 fit easily.
 @modal.web_server(port=NODE_PORT, startup_timeout=60)
 def web():
     import subprocess

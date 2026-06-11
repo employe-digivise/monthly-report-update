@@ -6,7 +6,9 @@ Generate a premium, agency-grade A4 PDF report from structured JSON data while m
 ## Architecture
 - **Layer 1 (Directive)**: This document.
 - **Layer 2 (Orchestration)**: AI Agent / Express Server.
-- **Layer 3 (Execution)**: `execution/generator.js` (Node.js/Puppeteer).
+- **Layer 3 (Execution)**: `execution/generator.js` (preprocessing + engine
+  selection via `PDF_ENGINE`) → `execution/renderers/pdfmake/` (default native
+  engine; puppeteer/weasyprint remain as HTML fallbacks).
 
 ## Input Specification
 - **brandName**: String (e.g., "ATRIA PREMIUM")
@@ -26,7 +28,10 @@ Generate a premium, agency-grade A4 PDF report from structured JSON data while m
     - Global Performance Table (Page 7): Dynamically generates table columns based on `enabledChannels`. Columns appear in order: shopee → tiktok → tokopedia → lazada → blibli. Only enabled channels get columns. Column widths auto-calculate to fit all enabled channels.
     - Best Campaign: Split into Page 14 (NV) and Page 15 (RM), each supporting 2 images displayed side-by-side.
     - Image Processing: Converts ALL image URLs (HTTP/HTTPS and local paths) to Base64 for embedding in PDF. Applies to: logo, operational screenshots, promotion screenshots, product images, and best campaign images.
-    - PDF Rendering: Uses Puppeteer with A4 format and 0mm margins.
+    - PDF Rendering: Default engine `pdfmake` builds the report natively
+      (A4, in-process, ~0.3-0.5s, ~200MB peak RAM). `PDF_ENGINE=puppeteer`
+      (A4, 0mm margins, needs devDependencies) and `PDF_ENGINE=weasyprint`
+      render the same report via the HTML template instead.
     - Dynamic Page Numbering: Adjusts page count based on enabled channels (e.g. TikTok adds 3 pages).
 
 ## Outputs
