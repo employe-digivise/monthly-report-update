@@ -110,7 +110,7 @@ const SPECS = {
         }),
         build: (ctx) => {
             const sp = ctx.storePerformance;
-            const adPct = sp.totalRevenue ? ((sp.adSales / sp.totalRevenue) * 100).toFixed(1) : 'N/A';
+            const adPct = sp.totalRevenue ? ((sp.adSalesRevenue / sp.totalRevenue) * 100).toFixed(1) : 'N/A';
             return {
                 systemPrompt: SHARED_SYSTEM,
                 userPrompt: [
@@ -118,7 +118,7 @@ const SPECS = {
                     'Buat 1-2 kalimat (max ~40 kata) tentang komposisi revenue toko Shopee: berapa dari ads sales vs existing/organic sales.',
                     'Beri interpretasi singkat (bukan deskriptif): apakah toko terlalu bergantung pada ads, atau organic-nya kuat, dst.',
                     '',
-                    `Data: ad sales = Rp${sp.adSales}, existing sales = Rp${sp.existingSales}, total revenue = Rp${sp.totalRevenue}, ad share ≈ ${adPct}%.`,
+                    `Data: ad sales = Rp${sp.adSalesRevenue}, existing sales = Rp${sp.existingRevenue}, total revenue = Rp${sp.totalRevenue}, ad share ≈ ${adPct}%.`,
                     '',
                     'Format output (JSON saja):',
                     '{"result": "<insight>"}',

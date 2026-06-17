@@ -1,3 +1,7 @@
+// Load .env so the app can read NVIDIA_API_KEY / ANTHROPIC_API_KEY etc.
+// (PM2 does not auto-load .env; without this the keys are never seen.)
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
+
 const express = require('express');
 const morgan = require('morgan');
 const path = require('path');
@@ -6,6 +10,7 @@ const crypto = require('crypto');
 
 const fs = require('fs');
 const { generatePDF } = require('./generator');
+const { generateInsights } = require('./insight_ai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -19,36 +24,49 @@ app.use((req, res, next) => {
     next();
 });
 
-// Per-user cooldown: 1 request per 30 seconds per IP
+// Per-user cooldown: 1 request per 30 seconds per IP (PDF generation).
 const cooldownMap = new Map();
 const COOLDOWN_SECONDS = 30;
 
-function rateLimiter(req, res, next) {
-    const ip = req.ip || req.connection.remoteAddress;
-    const now = Date.now();
-    const lastRequest = cooldownMap.get(ip);
+// Lighter cooldown for the insight preview endpoint (fast, may be retried).
+// Separate map so previewing does not burn the 30s generate budget.
+const previewCooldownMap = new Map();
+const PREVIEW_COOLDOWN_SECONDS = 5;
 
-    if (lastRequest) {
-        const elapsed = (now - lastRequest) / 1000;
-        if (elapsed < COOLDOWN_SECONDS) {
-            const remaining = Math.ceil(COOLDOWN_SECONDS - elapsed);
-            return res.status(429).json({
-                success: false,
-                message: `Please wait ${remaining} seconds before generating another report.`,
-                retryAfter: remaining
-            });
+function makeRateLimiter(map, cooldownSeconds) {
+    return function rateLimiter(req, res, next) {
+        const ip = req.ip || req.connection.remoteAddress;
+        const now = Date.now();
+        const lastRequest = map.get(ip);
+
+        if (lastRequest) {
+            const elapsed = (now - lastRequest) / 1000;
+            if (elapsed < cooldownSeconds) {
+                const remaining = Math.ceil(cooldownSeconds - elapsed);
+                return res.status(429).json({
+                    success: false,
+                    message: `Please wait ${remaining} seconds before trying again.`,
+                    retryAfter: remaining
+                });
+            }
         }
-    }
 
-    cooldownMap.set(ip, now);
-    return next();
+        map.set(ip, now);
+        return next();
+    };
 }
 
-// Cleanup stale cooldown entries every 5 minutes
+const rateLimiter = makeRateLimiter(cooldownMap, COOLDOWN_SECONDS);
+const previewRateLimiter = makeRateLimiter(previewCooldownMap, PREVIEW_COOLDOWN_SECONDS);
+
+// Cleanup stale cooldown entries every 5 minutes (both maps).
 setInterval(() => {
     const now = Date.now();
     for (const [ip, timestamp] of cooldownMap) {
         if (now - timestamp > COOLDOWN_SECONDS * 1000) cooldownMap.delete(ip);
+    }
+    for (const [ip, timestamp] of previewCooldownMap) {
+        if (now - timestamp > PREVIEW_COOLDOWN_SECONDS * 1000) previewCooldownMap.delete(ip);
     }
 }, 5 * 60 * 1000);
 
@@ -118,6 +136,37 @@ app.post('/webhook/lovable', rateLimiter, async (req, res) => {
 });
 
 /**
+ * Preview AI insights per section WITHOUT rendering a PDF.
+ * Same payload as /generate-report. Returns insights keyed by canonical
+ * payload path so the frontend can show/edit them before generating.
+ * Runs regardless of INSIGHT_AI_DISABLED (preview is explicitly requested).
+ * Optional body flag: regenerateAll/force = regenerate even filled slots.
+ */
+app.post('/preview-insights', previewRateLimiter, async (req, res) => {
+    const reqId = req.requestId;
+    const v = validateAndSanitize(req.body);
+    if (!v.ok) {
+        return res.status(v.status).json({ success: false, message: v.message, requestId: reqId });
+    }
+    const force = req.body.regenerateAll === true || req.body.force === true;
+    try {
+        const r = await generateInsights(v.data, { onlyEmpty: !force, mutate: false, force });
+        return res.status(200).json({
+            success: true,
+            requestId: reqId,
+            provider: r.provider,
+            model: r.model,
+            elapsedMs: r.elapsedMs,
+            insights: r.insights,
+            meta: { generated: r.generated, failed: r.failed, skipped: r.skipped }
+        });
+    } catch (error) {
+        console.error(`[${reqId}] preview-insights error:`, error);
+        return res.status(500).json({ success: false, message: 'Insight generation failed', requestId: reqId });
+    }
+});
+
+/**
  * Sanitize a string: strip HTML tags and limit length
  */
 function sanitizeString(str, maxLen = 200) {
@@ -160,63 +209,54 @@ function sanitizeMetrics(metrics) {
     return metrics;
 }
 
+/**
+ * Shared validation + sanitization for the report payload. Mutates `data`
+ * in place (sanitized fields). Returns { ok:true, data } or
+ * { ok:false, status, message }. Does NOT set data.template (render-only).
+ */
+function validateAndSanitize(data) {
+    if (!data || Object.keys(data).length === 0) {
+        return { ok: false, status: 400, message: 'Invalid or empty JSON body.' };
+    }
+    if (!data.brandName || typeof data.brandName !== 'string') {
+        return { ok: false, status: 400, message: 'Invalid data format. brandName is required and must be a string.' };
+    }
+    for (const field of ['reportMonth', 'reportYear']) {
+        if (!data[field]) {
+            return { ok: false, status: 400, message: `Missing required field: ${field}` };
+        }
+    }
+    const year = Number(data.reportYear);
+    if (isNaN(year) || year < 2020 || year > 2030) {
+        return { ok: false, status: 400, message: 'Invalid reportYear. Must be between 2020 and 2030.' };
+    }
+
+    // Sanitize text fields to prevent HTML/script injection
+    data.brandName = sanitizeString(data.brandName, 100);
+    data.reportMonth = sanitizeString(data.reportMonth, 50);
+    data.reportYear = sanitizeString(String(data.reportYear), 10);
+    if (data.footerText) data.footerText = sanitizeString(data.footerText, 200);
+    if (data.shopeeAdsSummary) data.shopeeAdsSummary = sanitizeString(data.shopeeAdsSummary, 1000);
+
+    // Sanitize enabledChannels
+    data.enabledChannels = sanitizeEnabledChannels(data.enabledChannels);
+
+    // Sanitize numeric metrics
+    if (data.metrics) {
+        data.metrics = sanitizeMetrics(data.metrics);
+    }
+
+    return { ok: true, data };
+}
+
 async function handleReportGeneration(req, res) {
     const reqId = req.requestId;
     try {
-        const data = req.body;
-
-        if (!data || Object.keys(data).length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid or empty JSON body.',
-                requestId: reqId
-            });
+        const v = validateAndSanitize(req.body);
+        if (!v.ok) {
+            return res.status(v.status).json({ success: false, message: v.message, requestId: reqId });
         }
-
-        if (!data.brandName || typeof data.brandName !== 'string') {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid data format. brandName is required and must be a string.',
-                requestId: reqId
-            });
-        }
-
-        // Validate required fields
-        const requiredFields = ['reportMonth', 'reportYear'];
-        for (const field of requiredFields) {
-            if (!data[field]) {
-                return res.status(400).json({
-                    success: false,
-                    message: `Missing required field: ${field}`,
-                    requestId: reqId
-                });
-            }
-        }
-
-        // Validate reportYear is a reasonable number
-        const year = Number(data.reportYear);
-        if (isNaN(year) || year < 2020 || year > 2030) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid reportYear. Must be between 2020 and 2030.',
-                requestId: reqId
-            });
-        }
-
-        // Sanitize text fields to prevent HTML/script injection
-        data.brandName = sanitizeString(data.brandName, 100);
-        data.reportMonth = sanitizeString(data.reportMonth, 50);
-        data.reportYear = sanitizeString(String(data.reportYear), 10);
-        if (data.footerText) data.footerText = sanitizeString(data.footerText, 200);
-        if (data.shopeeAdsSummary) data.shopeeAdsSummary = sanitizeString(data.shopeeAdsSummary, 1000);
-
-        // Sanitize enabledChannels
-        data.enabledChannels = sanitizeEnabledChannels(data.enabledChannels);
-
-        // Sanitize numeric metrics
-        if (data.metrics) {
-            data.metrics = sanitizeMetrics(data.metrics);
-        }
+        const data = v.data;
 
         // Template is fixed to 'aurora' (the only supported template).
         // Any incoming `template` value (incl. legacy corporate/atria/dashboard) is coerced to aurora.

@@ -25,6 +25,41 @@
 
 > Both endpoints accept the same request body and return the same response format.
 
+<a name="preview-insights"></a>
+### Preview AI Insights (no PDF)
+**URL**: `{BASE_URL}/preview-insights`
+**Method**: `POST`
+**Headers**: `Content-Type: application/json`
+
+Runs **only** the AI insight generation and returns the results per section as JSON — **no PDF is rendered**. Lets a frontend show/edit insights before calling `/generate-report`.
+
+- **Request body**: same payload as `/generate-report`. Insight slots may be empty. Optional flag `regenerateAll` (alias `force`, default `false`) regenerates every eligible slot even if already filled (default only fills empty/placeholder slots and echoes existing ones).
+- Runs regardless of `INSIGHT_AI_DISABLED`. Rate limit: 1 request / 5 seconds / IP (separate from the 30s generate limit).
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "requestId": "a1b2c3d4e5f6g7h8",
+  "provider": "nvidia",
+  "model": "meta/llama-3.3-70b-instruct",
+  "elapsedMs": 2840,
+  "insights": {
+    "metrics.summary": "…",
+    "globalRevenue.summary": "…",
+    "globalPerformanceDetail.aiConclusion": ["…", "…"],
+    "storePerformance.notes": "…",
+    "shopeeAdsSummary": "…",
+    "tiktok_data.store_performance.summary": ["…", "…"]
+  },
+  "meta": { "generated": ["metrics.summary"], "failed": [], "skipped": ["shopeeAdsSummary"] }
+}
+```
+
+- `insights` keys are the **canonical payload paths** — merge each value back into the payload at the same path, let the user edit, then POST to `/generate-report`.
+- **Round-trip guarantee**: re-sending a payload with filled insight fields to `/generate-report` preserves them (the generate-path only fills empty slots), so preview → edit → generate is lossless.
+- Partial LLM failures are reported in `meta.failed` and still return **200** (not 500).
+
 ### Health Check
 **URL**: `{BASE_URL}/health`
 **Method**: `GET`
@@ -69,9 +104,11 @@ Currently no API key authentication is required. Access is controlled via CORS o
 
 ---
 
-## AI-Generated Insights (Auto-fill)
+## AI-Generated Insights (Auto-fill + Preview)
 
-Insight/summary fields below are **optional** in the request body. If the field is empty (`""`, `[]`), missing, or contains a placeholder (`"test"`, `"TODO"`), the server auto-fills it using Claude (`claude-haiku-4-5`) based on the surrounding data. User-provided non-placeholder content is preserved as-is.
+Insight/summary fields below are **optional** in the request body. If the field is empty (`""`, `[]`), missing, or contains a placeholder (`"test"`, `"TODO"`), the server auto-fills it using an LLM based on the surrounding data. User-provided non-placeholder content is preserved as-is.
+
+The same six slots can be generated **without rendering a PDF** via [`POST /preview-insights`](#preview-insights) so a frontend can show/edit them before generating.
 
 | Field path | Type | Section |
 |---|---|---|
@@ -80,14 +117,19 @@ Insight/summary fields below are **optional** in the request body. If the field 
 | `globalPerformanceDetail.aiConclusion` | string[] | Global Performance |
 | `storePerformance.notes` | string | Shopee Store Performance |
 | `shopeeAdsSummary` | string | Shopee Ads |
-| `tiktok_data.store_performance.summary` | string[] | TikTok Store Performance |
+| `tiktok_data.store_performance.summary` | string[] | TikTok Store Performance (only when `enabledChannels.tiktok=true`) |
 
-**Env vars** (server-side):
-- `ANTHROPIC_API_KEY` — required to enable enrichment. If missing, slots stay empty (template fallbacks still apply).
-- `INSIGHT_AI_MODEL` — defaults to `claude-haiku-4-5-20251001`.
-- `INSIGHT_AI_DISABLED=1` — disables enrichment (used in tests).
+**Provider** — pluggable. Default **NVIDIA** (OpenAI-compatible), Claude as fallback.
 
-Failures per slot are logged but do not abort the request.
+**Env vars** (server-side, loaded from `.env` via dotenv):
+- `INSIGHT_AI_PROVIDER` — `nvidia` (default) | `anthropic`.
+- `NVIDIA_API_KEY` + `NVIDIA_BASE_URL` (default `https://integrate.api.nvidia.com/v1`) — required when provider=nvidia.
+- `ANTHROPIC_API_KEY` — required when provider=anthropic.
+- `INSIGHT_AI_MODEL` — override; blank = provider default (`meta/llama-3.3-70b-instruct` for nvidia, `claude-haiku-4-5-20251001` for anthropic).
+- `INSIGHT_AI_TIMEOUT_MS` — per-call timeout (default 30000).
+- `INSIGHT_AI_DISABLED=1` — disables the **generate-path** auto-fill safety net. `/preview-insights` runs regardless.
+
+If the active provider's key is missing, slots stay empty (template fallbacks still apply). Failures per slot are logged but do not abort the request.
 
 ---
 
@@ -837,5 +879,5 @@ curl -X POST http://<YOUR_VPS_HOST>:<PORT>/webhook/lovable \
 
 ---
 
-**Last Updated**: 2026-04-02
+**Last Updated**: 2026-06-15
 **Server Status**: Deployed on VPS `<YOUR_VPS_HOST>:<PORT>` (PM2: `monthly-report`)

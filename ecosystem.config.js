@@ -13,8 +13,13 @@ module.exports = {
                 // Mirror the (former) Modal deployment env:
                 // browser may call the API directly → allow any origin
                 ALLOWED_ORIGINS: '*',
-                // Claude insight auto-fill off until Anthropic credits topped up
-                INSIGHT_AI_DISABLED: '1'
+                // Insight AI provider (NVIDIA by default). The API key itself is
+                // read from .env via dotenv — NOT hardcoded here (keep secrets out of VCS).
+                INSIGHT_AI_PROVIDER: 'nvidia',
+                // Generate-path auto-fill safety net ON (the /preview-insights
+                // endpoint works regardless of this flag). Set '1' to keep generate
+                // from ever calling the LLM (preview-only workflow).
+                INSIGHT_AI_DISABLED: '0'
             },
             error_file: 'logs/pm2-error.log',
             out_file: 'logs/pm2-out.log',
