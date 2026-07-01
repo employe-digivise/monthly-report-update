@@ -111,24 +111,7 @@
         </div>
     </div>
 
-    <!-- Summary -->
-    <% if (typeof metrics !=='undefined' && metrics.summary) { %>
-    <div style="padding: 14px 24mm 0;">
-        <div class="summary-box">
-            <p class="summary-box__title">Summary</p>
-            <% var _mPoints = (metrics.summary || '').split(/(?:^|\s)(?:\d+[\.\)]\s*|- )/).filter(function(s){ return s.trim(); });
-               if (_mPoints.length > 1) { %>
-                <ul style="padding-left:16px;list-style-type:disc;margin:0;">
-                    <% _mPoints.forEach(function(point) { %>
-                        <li style="font-size:10px;color:var(--text-body);margin-bottom:3px;line-height:1.5;"><%= point.trim() %></li>
-                    <% }) %>
-                </ul>
-            <% } else { %>
-                <p class="summary-box__text"><%= metrics.summary %></p>
-            <% } %>
-        </div>
-    </div>
-    <% } %>
+    <!-- Operational summary box intentionally removed (per request) -->
 
     <div class="page-footer">
         <span><%= brandName %> | <%= reportMonth %></span>

@@ -74,17 +74,15 @@ module.exports = {
         };
 
         // -------------------------------------------------------------------
-        // Summary box — only when metrics.summary is truthy (template guard).
+        // Summary box intentionally omitted on this page (per request): the
+        // operational page shows KPI cards + screenshots only. metrics.summary
+        // is still collected/generated — it just isn't rendered here.
         // -------------------------------------------------------------------
         const content = [
             H.contentHeader('Performa Operasional Toko'),
             ...kpiGrid,
             screenshotStack,
         ];
-        if (metrics.summary) {
-            content.push(Object.assign({ margin: [0, H.px(14), 0, 0] },
-                H.summaryBox('Summary', metrics.summary)));
-        }
 
         return [{ content, footer: 'light' }];
     },
