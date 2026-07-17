@@ -270,8 +270,11 @@ async function handleReportGeneration(req, res) {
         const warnings = result.warnings || [];
         const fileName = path.basename(pdfPath);
 
-        // Construct the full download URL
-        const downloadUrl = `${req.protocol}://${req.get('host')}/output/${fileName}`;
+        // Construct the full download URL. PUBLIC_BASE_URL (e.g. https://tools.digivise.id)
+        // overrides the request-derived base: the edge runtime calls this service via
+        // 127.0.0.1:3000, so req.get('host') would leak localhost into stored links.
+        const publicBase = (process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get('host')}`).replace(/\/+$/, '');
+        const downloadUrl = `${publicBase}/output/${fileName}`;
 
         // Read PDF and convert to base64
         const pdfBuffer = fs.readFileSync(pdfPath);
